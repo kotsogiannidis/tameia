@@ -1,0 +1,2069 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#8b2fc9">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Ταμείο">
+<link rel="manifest" href="manifest.webmanifest">
+<title>ConnectPhone — Ταμείο</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--bg:#2b0f4a;--card:#3d1a66;--line:#5b2f87;--txt:#f3ecfb;--mut:#c4abe0;--pink:#d94bd4;--purple:#8b2fc9;--grad:linear-gradient(135deg,#8b2fc9,#d94bd4);--okbg:#0c4a3e;--errbg:#5b1a1a;}
+*{box-sizing:border-box;font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif}
+body{margin:0;background:radial-gradient(1200px 600px at 50% -10%,#4a1a78 0%,var(--bg) 55%);color:var(--txt);min-height:100vh}
+.hidden{display:none!important}
+input,select{width:100%;padding:11px 12px;margin:6px 0;border-radius:10px;border:1px solid var(--line);background:rgba(0,0,0,.22);color:var(--txt);font-size:15px;outline:none}
+input:focus,select:focus{border-color:var(--pink)}
+input[readonly]{opacity:.85}
+button{cursor:pointer;border:0;border-radius:10px;font-size:15px}
+.btn{background:var(--grad);color:#fff;padding:12px 16px;width:100%;font-weight:700;box-shadow:0 6px 18px rgba(217,75,212,.32)}
+.btn:hover{filter:brightness(1.08)} .btn:active{transform:translateY(1px)}
+#login{max-width:380px;margin:8vh auto;background:var(--card);padding:30px;border-radius:18px;border:1px solid var(--line);box-shadow:0 20px 60px rgba(0,0,0,.45)}
+.logo{display:flex;align-items:center;gap:12px;justify-content:center;margin-bottom:8px}
+.logo svg{width:54px;height:54px}.logo .txt{font-size:24px;font-weight:800}
+.logo .txt b,.hleft .name b{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{text-align:center;color:var(--mut);margin:0 0 20px;font-size:14px}
+header{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;background:rgba(0,0,0,.22);position:sticky;top:0;z-index:10;border-bottom:1px solid var(--line)}
+.hleft{display:flex;align-items:center;gap:10px}.hleft svg{width:34px;height:34px}.hleft .name{font-weight:800;font-size:17px}.hleft .store{font-size:13px;color:var(--mut)}
+.hdate{font-size:13px;color:var(--mut);text-align:right}
+.logout{background:rgba(255,255,255,.1);color:#fff;padding:8px 14px;width:auto}
+.wrap{max-width:1100px;margin:0 auto;padding:18px}
+.card{background:var(--card);border-radius:16px;padding:20px;margin-bottom:18px;border:1px solid var(--line)}
+.card h3{margin:0 0 14px;font-size:18px;display:flex;align-items:center;gap:8px}
+.card h3::before{content:"";width:4px;height:18px;border-radius:3px;background:var(--grad);display:inline-block}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+label{font-size:12px;color:var(--mut);display:block;margin-bottom:2px}
+.pkg{display:flex;align-items:center;justify-content:space-between;background:rgba(0,0,0,.2);border-radius:12px;padding:12px 14px;margin-bottom:10px;gap:10px;flex-wrap:wrap;border:1px solid var(--line)}
+.pkg .pname{font-weight:800;font-size:17px;min-width:54px;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.pkg select{width:auto;min-width:120px;margin:0;flex:1}
+.pkg .pay{min-width:110px;flex:0}.pkg .salebtn{background:var(--grad);color:#fff;padding:9px 14px;width:auto;font-weight:700;white-space:nowrap;margin:0}
+.counter{display:flex;align-items:center;gap:10px}
+.counter button{width:40px;height:40px;font-size:22px;background:var(--grad);color:#fff;line-height:1;font-weight:700}
+.counter button.minus{background:rgba(255,255,255,.12)}
+.counter .qty{min-width:34px;text-align:center;font-size:19px;font-weight:800}
+.acc-row{display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap}
+.acc-row input,.acc-row select{margin:0}.acc-row .code{flex:2;min-width:120px}.acc-row .price{flex:1;min-width:80px}.acc-row .pay{flex:0;min-width:110px}
+.acc-row .del{background:rgba(248,113,113,.18);color:#fca5a5;width:42px}
+.small{background:rgba(255,255,255,.1);color:#fff;padding:9px 13px;width:auto;margin-top:6px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:9px;border-bottom:1px solid var(--line);text-align:left}
+th{color:var(--mut);font-weight:600}
+td input,td select{width:100%;margin:0;padding:8px}
+.qtycell{width:80px}.typecell{width:120px}
+.load1{background:var(--grad);color:#fff;width:auto;padding:6px 10px;font-size:12px;font-weight:700}
+.total{font-size:26px;font-weight:900;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent;text-align:right}
+.msg{padding:10px;border-radius:10px;margin:10px 0;font-size:14px}
+.msg.ok{background:var(--okbg);color:#a7f3d0}.msg.err{background:var(--errbg);color:#fecaca}
+.tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap}
+.tabs button{background:rgba(255,255,255,.08);color:var(--mut);padding:10px 18px;width:auto;font-weight:600}
+.tabs button.active{background:var(--grad);color:#fff}
+.section{display:none}.section.active{display:block}
+.csection,.ssection{display:none}.csection.active,.ssection.active{display:block}
+.bigtotal{display:flex;justify-content:space-between;align-items:center;background:rgba(0,0,0,.25);border:1px solid var(--line);border-radius:12px;padding:13px 16px;margin-top:8px}
+.bigtotal .lbl{color:var(--mut);font-size:14px}.bigtotal .total{font-size:22px}
+.filters{display:flex;gap:12px;flex-wrap:wrap;align-items:end}.filters>div{flex:1;min-width:150px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:18px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px}
+.kpi .k-l{color:var(--mut);font-size:13px;margin-bottom:6px}
+.kpi .k-v{font-size:24px;font-weight:900;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.kpi.plain .k-v{background:none;color:var(--txt)}
+.storecards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.scard{background:rgba(0,0,0,.2);border:1px solid var(--line);border-radius:14px;padding:16px}
+.scard h4{margin:0 0 10px;font-size:16px}
+.scard .row{display:flex;justify-content:space-between;font-size:14px;padding:4px 0;color:var(--mut)}
+.scard .row b{color:var(--txt)}
+.tot-row{font-weight:800}
+.spin{color:var(--mut);padding:20px;text-align:center}
+.badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;background:rgba(255,255,255,.12);color:var(--mut);margin-left:6px}
+.pbtn{background:#2a1a3a;color:#e9d8ff;border:1px solid #5b2a8a;border-radius:20px;padding:8px 16px;font-size:13px;cursor:pointer;transition:.15s}.pbtn:hover{background:#3a2350}.pbtn.active{background:linear-gradient(90deg,#8b3df0,#e83fc0);color:#fff;border-color:transparent;font-weight:700}.impbtn{margin-top:8px;width:100%;background:#2a1a3a;color:#e9d8ff;border:1px solid #5b2a8a;border-radius:8px;padding:7px;font-size:12px;cursor:pointer}.impbtn:hover{background:#3a2350}
+.live-widget{border-color:var(--pink);position:relative}.live-head{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:12px}.live-dot{width:10px;height:10px;border-radius:50%;background:#22c55e;display:inline-block;margin-right:6px;box-shadow:0 0 8px #22c55e}.live-dot.off{background:#ef4444;box-shadow:0 0 8px #ef4444}.live-dot.pulse{animation:livePulse .6s ease}.live-stores{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}.live-store{background:rgba(0,0,0,.25);border:1px solid var(--line);border-radius:12px;padding:14px;transition:transform .25s,box-shadow .25s}.live-store.bump{transform:scale(1.02);box-shadow:0 0 20px rgba(217,75,212,.35)}.live-store h4{margin:0 0 8px;font-size:15px}.live-store .row{display:flex;justify-content:space-between;font-size:13px;padding:3px 0;color:var(--mut)}.live-store .row b{color:var(--txt)}.live-store .today-total{font-size:18px;font-weight:800;margin-top:8px;text-align:right;background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+@keyframes livePulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(1.4)}}
+.woo-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;margin-top:8px}.woo-stat{background:rgba(0,0,0,.2);border-radius:10px;padding:12px;text-align:center}.woo-stat .lbl{font-size:11px;color:var(--mut)}.woo-stat .val{font-size:20px;font-weight:800;margin-top:4px}.woo-stat.ok .val{color:#86efac}.woo-stat.warn .val{color:#fcd34d}.woo-stat.bad .val{color:#fca5a5}.woo-unmapped{margin-top:10px;font-size:13px;color:var(--mut)}.woo-unmapped code{background:rgba(0,0,0,.3);padding:2px 6px;border-radius:4px;margin:2px}
+.esim-grid{display:grid;gap:12px;margin-top:10px}.esim-item{display:flex;gap:12px;align-items:center;background:rgba(0,0,0,.2);border:1px solid var(--line);border-radius:12px;padding:12px;flex-wrap:wrap}.esim-item img{width:48px;height:48px;border-radius:8px;object-fit:cover;background:rgba(0,0,0,.3)}.esim-meta{flex:1;min-width:180px}.esim-meta .name{font-weight:700}.esim-meta .sub{font-size:12px;color:var(--mut);margin-top:2px}.esim-pull{display:flex;gap:8px;align-items:center}.esim-pull input{width:70px;margin:0;padding:8px}
+.qr-list{display:grid;gap:10px;margin-top:10px}.qr-card{display:flex;gap:12px;align-items:center;justify-content:space-between;background:rgba(0,0,0,.2);border:1px solid var(--line);border-radius:12px;padding:12px;flex-wrap:wrap}.qr-card .meta{flex:1;min-width:160px}.qr-card .meta .t{font-weight:700;font-size:14px}.qr-card .meta .s{font-size:12px;color:var(--mut);margin-top:2px}.qr-card .acts{display:flex;gap:8px;flex-wrap:wrap}.qr-overlay{position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}.qr-overlay img{max-width:min(92vw,420px);max-height:70vh;border-radius:12px;background:#fff;padding:12px}.qr-overlay .close{margin-top:16px;background:var(--grad);color:#fff;padding:12px 24px;border-radius:10px;font-weight:700}
+.alert-bell{position:relative;background:rgba(255,255,255,.1);color:#fff;padding:8px 12px;width:auto;border-radius:10px;font-size:18px;line-height:1}.alert-bell .badge-count{position:absolute;top:-4px;right:-4px;background:#ef4444;color:#fff;font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:9px;display:flex;align-items:center;justify-content:center;padding:0 4px}.alert-panel{position:fixed;top:56px;right:12px;width:min(380px,calc(100vw - 24px));max-height:70vh;overflow-y:auto;background:var(--card);border:1px solid var(--line);border-radius:14px;box-shadow:0 16px 48px rgba(0,0,0,.5);z-index:100;display:none;padding:12px}.alert-panel.open{display:block}.alert-item{padding:10px;border-radius:10px;margin-bottom:8px;background:rgba(0,0,0,.22);border-left:4px solid var(--pink);font-size:13px}.alert-item.critical{border-left-color:#ef4444}.alert-item .atitle{font-weight:700;margin-bottom:4px}.alert-item .abody{color:var(--mut);font-size:12px}.alert-item .ameta{font-size:11px;color:var(--mut);margin-top:4px}
+.offline-banner{background:#5b1a1a;color:#fecaca;text-align:center;padding:8px;font-size:13px;font-weight:600;display:none}.offline-banner.show{display:block}
+.sync-pending{font-size:12px;color:#fcd34d;margin-top:6px}</style>
+</head>
+<body>
+
+<div id="login">
+  <div class="logo"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="cpg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8b2fc9"/><stop offset="1" stop-color="#d94bd4"/></linearGradient></defs><g fill="none" stroke="url(#cpg)" stroke-linecap="round"><path d="M78 28 A34 34 0 1 0 78 72" stroke-width="11"/><path d="M70 40 A18 18 0 1 0 70 60" stroke-width="9"/></g></svg><div class="txt"><b>Connect</b>Phone</div></div>
+  <p class="sub">Σύστημα Ταμείου</p>
+  <input id="email" type="email" placeholder="Email" autocomplete="username">
+  <input id="pass" type="password" placeholder="Κωδικός" autocomplete="current-password">
+  <button class="btn" id="loginBtn">Σύνδεση</button>
+  <div id="loginMsg"></div>
+</div>
+
+<div id="offlineBanner" class="offline-banner">📴 Χωρίς σύνδεση — οι αλλαγές αποθηκεύονται τοπικά και συγχρονίζονται αυτόματα</div>
+<div id="alertPanel" class="alert-panel"></div>
+<div id="appHeader" class="hidden">
+  <header>
+    <div class="hleft"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="cpg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8b2fc9"/><stop offset="1" stop-color="#d94bd4"/></linearGradient></defs><g fill="none" stroke="url(#cpg)" stroke-linecap="round"><path d="M78 28 A34 34 0 1 0 78 72" stroke-width="11"/><path d="M70 40 A18 18 0 1 0 70 60" stroke-width="9"/></g></svg><div><div class="name"><b>Connect</b>Phone</div><div class="store" id="storeLabel"></div></div></div>
+    <div style="display:flex;align-items:center;gap:10px"><button class="small hidden" id="hdrViewAsBtn" type="button" style="margin:0;padding:8px 12px">👁 Προβολή ως</button><button class="small hidden" id="hdrSettingsBtn" type="button" style="margin:0;padding:8px 12px">⚙️ Settings</button><div class="hdate" id="hdate"></div><button class="alert-bell hidden" id="alertBell" title="Ειδοποιήσεις">🔔<span class="badge-count hidden" id="alertCount">0</span></button><span id="netStatus" class="badge" title="Σύνδεση">●</span><button class="logout" id="logoutBtn">Έξοδος</button></div>
+  </header>
+</div>
+
+<!-- ADMIN DASHBOARD -->
+<div id="admin" class="hidden">
+  <div class="wrap">
+    <div class="card live-widget" id="liveCashWidget">
+      <div class="live-head"><h3 style="margin:0">⚡ Ταμείο Τώρα <span class="badge">Live</span></h3><span style="font-size:13px;color:var(--mut)"><span class="live-dot" id="liveDot"></span><span id="liveStatus">Σύνδεση...</span></span></div>
+      <p style="font-size:13px;color:var(--mut);margin:-4px 0 10px">Σήμερα ανά κατάστημα — ενημερώνεται live χωρίς refresh</p>
+      <div class="live-stores" id="liveStores"><div class="spin">Φόρτωση live...</div></div>
+    </div>
+    <div class="card" id="wooHealthPanel">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px"><h3 style="margin:0">🛒 WooCommerce Health</h3><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="small" type="button" id="adminOpenSettingsBtn" style="margin:0">⚙️ Settings / API</button><button class="small" id="wooSyncBtn" style="margin:0">Συγχρονισμός τώρα</button></div></div>
+      <div class="woo-grid" id="wooHealthBody"><div class="spin">Φόρτωση...</div></div>
+      <div class="woo-unmapped" id="wooUnmapped"></div>
+      <div id="wooSyncMsg" style="margin-top:8px;font-size:13px"></div>
+    </div>
+    <div class="card" id="qrAdminPanel">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px"><h3 style="margin:0">📱 QR Unlimited eSIM — Ενεργειές</h3><button class="small" type="button" id="qrAdminRefreshBtn" style="margin:0">Ανανέωση</button></div>
+      <p style="font-size:13px;color:var(--mut);margin:-4px 0 10px">Μόνο φορτωμένα unlimited eSIM (15€) — όχι SIM, όχι 10GB</p>
+      <div id="qrAdminBody"><div class="spin">Φόρτωση...</div></div>
+    </div>
+    <div class="card"><h3>Φίλτρα</h3><div class="pbar" id="pbar" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px"><button class="pbtn" data-range="today">Σήμερα</button><button class="pbtn" data-range="yesterday">Χθες</button><button class="pbtn" data-range="7">Τελευταίες 7 ημέρες</button><button class="pbtn" data-range="30">Τελευταίες 30</button><button class="pbtn" data-range="90">Τελευταίες 90</button><button class="pbtn" data-range="365">Ένα έτος</button><button class="pbtn" data-range="all">Όλες</button></div>
+      <div style="display:none"><select id="fYear"></select><select id="fMonth"><option value="0"></option></select><button id="loadDash"></button></div></div><div class="card"><h3>Γραφήμα μήνα (ανά ημέρα)</h3><div style="display:flex;gap:18px;flex-wrap:wrap;font-size:13px;margin-bottom:8px"><span><span style="display:inline-block;width:12px;height:12px;background:#8b3df0;border-radius:2px;vertical-align:middle"></span> Πακέτα που πουλήθηκαν</span><span><span style="display:inline-block;width:12px;height:3px;background:#e83fc0;vertical-align:middle"></span> Ποσά που εισπράχθηκαν (€)</span></div><div style="overflow-x:auto"><canvas id="dayChart" width="900" height="300"></canvas></div></div><div class="card"><h3>Οικονομικά ανά ημέρα (φυσικά καταστήματα)</h3><div id="finBody" style="overflow-x:auto"></div></div><div id="dashBody"><div class="spin">Φόρτωση...</div></div>
+  </div>
+</div>
+
+<!-- REGULAR STORE APP -->
+<div id="app" class="hidden">
+  <div class="wrap">
+    <div class="tabs">
+      <button class="active" data-sec="cash">Ταμείο</button>
+      <button data-sec="sales">Πωλήσεις</button>
+      <button data-sec="warehouse">Αποθήκη</button>
+      <button data-sec="qresim" id="tabQrEs" class="hidden">📱 QR eSIM 15€</button>
+      <button data-sec="mypay" id="tabMyPay" class="hidden">Μισθός & Ωράριο</button>
+    </div>
+    <div class="section active" id="sec-cash">
+      <div class="card"><h3>Στοιχεία Ημέρας</h3>
+        <div class="grid2">
+          <div><label>Ημερομηνία</label><input id="regDate" readonly></div>
+          <div><label>Όνομα εργαζομένου</label><input id="employee" placeholder="π.χ. Γιάννης"></div>
+          <div><label>Ώρα έναρξης</label><input id="openTime" type="time"></div>
+          <div><label>Ώρα λήξης</label><input id="closeTime" type="time"></div>
+        </div>
+      </div>
+      <div class="card"><h3>Ταμείο Ημέρας</h3>
+        <p style="font-size:13px;color:var(--mut);margin-top:-6px">Τα ποσά προκύπτουν αυτόματα από τις πωλήσεις.</p>
+        <div class="bigtotal"><span class="lbl">Μετρητά</span><span class="total" id="cashCashT">0.00 €</span></div>
+        <div class="bigtotal"><span class="lbl">Κάρτες</span><span class="total" id="cashCardT">0.00 €</span></div>
+        <div class="bigtotal" style="border-color:var(--pink)"><span class="lbl" style="font-weight:700;color:var(--txt)">Σύνολο Ημέρας</span><span class="total" id="cashTotal">0.00 €</span></div>
+      </div>
+      <div class="card" id="cumCard"><h3>Σωρευμένο Ταμείο (Μετρητά)</h3><p style="font-size:13px;color:var(--mut);margin-top:-6px">Άθροισμα μετρητών από όλες τις πωλήσεις, μείον καταθέσεις και έξοδα.</p><div class="bigtotal" style="border-color:var(--pink)"><span class="lbl" style="font-weight:700;color:var(--txt)">Διαθέσιμο στο ταμείο</span><span class="total" id="cumTotal">0.00 €</span></div><div style="margin-top:12px;display:grid;gap:8px"><label>Ποσό κατάθεσης (€)</label><input id="depAmount" type="number" min="0" step="0.01" placeholder="π.χ. 500"><label>Φωτογραφία απόδειξης κατάθεσης</label><input id="depPhoto" type="file" accept="image/*"><button class="btn" id="depBtn">Κατάθεση — Αφαίρεση από ταμείο</button><div id="depMsg"></div></div><h4 style="margin:14px 0 6px">Ιστορικό καταθέσεων</h4><div id="depList" style="font-size:13px"></div></div>
+      <div class="card" id="expCard"><h3>Μικροέξοδα</h3><p style="font-size:13px;color:var(--mut);margin-top:-6px">Έξοδα μετρητών (π.χ. καφέδες, χαρτικά). Αφαιρούνται από το διαθέσιμο ταμείο.</p><div style="margin-top:12px;display:grid;gap:8px"><label>Περιγραφή εξόδου</label><input id="expNote" type="text" placeholder="π.χ. καφέδες για το μαγαζί"><label>Ποσό (€)</label><input id="expAmount" type="number" min="0" step="0.01" placeholder="π.χ. 12.50"><button class="btn" id="expBtn">Καταχώρηση εξόδου — Αφαίρεση από ταμείο</button><div id="expMsg"></div></div><h4 style="margin:14px 0 6px">Ιστορικό εξόδων</h4><div id="expList" style="font-size:13px"></div></div>
+      <div class="card"><button class="btn" id="closeShiftBtn">Κλείσιμο Βάρδιας — Αποστολή αναφοράς</button><div id="shiftMsg"></div></div>
+    </div>
+    <div class="section" id="sec-sales">
+      <div class="card"><h3>Πακέτα</h3><div id="pkgBox"></div><p style="font-size:12px;color:var(--mut)">Διάλεξε τύπο + πληρωμή, βάλε ποσότητα (+/−) και πάτα <b>Πώληση</b> για καταχώρηση στο ταμείο.</p></div>
+      <div class="card"><h3>Αξεσουάρ</h3><div id="accList"></div><button class="small" onclick="addAccRow()">+ Προσθήκη αξεσουάρ</button></div>
+      <div class="card"><h3>Σύνολο Πωλήσεων Ημέρας</h3><div class="bigtotal"><span class="lbl">Σύνολο</span><span class="total" id="dayTotal">0.00 €</span></div></div>
+    </div>
+    <div class="section" id="sec-warehouse"><div id="whBox"></div></div>
+    <div class="section" id="sec-qresim"><div id="qrEsBox"><div class="spin">Φόρτωση...</div></div></div>
+    <div class="section" id="sec-mypay"><div id="myPayBox"><div class="spin">Φόρτωση...</div></div></div>
+  </div>
+</div>
+
+<!-- CENTRAL WAREHOUSE -->
+<div id="central" class="hidden">
+  <div class="wrap">
+    <div class="tabs">
+      <button class="active" data-csec="stock">Κεντρικό Απόθεμα</button>
+      <button data-csec="all">Όλες οι Αποθήκες</button>
+      <button data-csec="move">Εξαγωγή / Αποστολή</button>
+      <button data-csec="report">📋 Ημερήσιο Report</button>
+    </div>
+    <div class="csection active" id="csec-stock"><div id="centralStock"><div class="spin">Φόρτωση...</div></div></div>
+    <div class="csection" id="csec-all"><div id="allStores"><div class="spin">Φόρτωση...</div></div></div>
+    <div class="csection" id="csec-move"><div class="card"><h3>Εξαγωγή από Κεντρική</h3><div id="moveBox"></div></div></div>
+    <div class="csection" id="csec-report"><div id="centralReport"><div class="spin">Φόρτωση...</div></div></div>
+  </div>
+</div>
+
+<!-- FIELD SELLERS (ΠΩΛΗΤΕΣ) -->
+<div id="seller" class="hidden">
+  <div class="wrap">
+    <div class="tabs" id="sellerTabs">
+      <button class="active" data-ssec="points">📍 Σημεία</button>
+      <button data-ssec="drop">📦 Κατάθεση Πακέτων</button>
+      <button data-ssec="stock">📋 Ημερήσιο Απόθεμα</button>
+    </div>
+    <div class="ssection active" id="ssec-points"><div id="sellerPoints"><div class="spin">Φόρτωση...</div></div></div>
+    <div class="ssection" id="ssec-drop"><div id="sellerDrop"></div></div>
+    <div class="ssection" id="ssec-stock"><div id="sellerStock"><div class="spin">Φόρτωση...</div></div></div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL='https://stbmppnyngfkbvgoajuf.supabase.co';
+const SUPABASE_ANON='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN0Ym1wcG55bmdma2J2Z29hanVmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1MjAxNDcsImV4cCI6MjA5NzA5NjE0N30.nbJkIpjm9XiZUvBPWe3fv7iHqFEp-lKu5VGEN8cn0nI';
+const PACKAGE_PRICES=['20','25','30','40'];
+const LOADED_TYPES=['10GB','Unlimited WU','Unlimited Vodafone'];
+const EMPTY_NAME='Άδεια';
+const PHYSICAL_CATALOG=[EMPTY_NAME,...LOADED_TYPES];
+const ONLINE_PRODUCTS=['Frog','WU','Cosmokarta'];
+const ONLINE_BRANDS=[{key:'Frog',label:'Frog'},{key:'WU',label:'WU'},{key:'Cosmokarta',label:'Cosmokarta'}];
+const STORE_BRANDS=[{key:'Frog',label:'Frog'},{key:'WU',label:'WU'},{key:'Cosmokarta',label:'Vodafone'}];
+const ESIM_PRODUCTS=STORE_BRANDS.map(b=>b.key);
+const CENTRAL_PRODUCTS=['WU','Frog','Cosmocarta','Travelers'];
+const PHYSICAL_STORES=['Μύκονος','Σαντορίνη','Ρόδος'];
+const ALL_STORES=['Μύκονος','Σαντορίνη','Ρόδος','Online'];
+const CENTRAL='Κεντρική Αποθήκη';
+const ONLINE_PRICE=15;
+let REPORT_TO='kotsogiannidis@connectphone.gr';
+async function loadAppSettings(){
+  try{
+    const {data}=await sb.from('app_settings').select('key,value');
+    (data||[]).forEach(r=>{ if(r.key==='report_email'&&r.value) REPORT_TO=r.value; });
+  }catch(e){}
+}
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_ANON);
+let MY_STORE=null,MY_ROLE=null,MY_EMPLOYEE_ID=null,PRODUCTS=[],STOCK={},CASH={};
+let SALES={q20c:0,q20k:0,q25c:0,q25k:0,q30c:0,q30k:0,q40c:0,q40k:0,accessories:[]};
+let PENDING_PKG={20:0,25:0,30:0,40:0};
+let CUM={total:0,deposits:[],expenses:[]};
+let DASH_RANGE=null;
+let ONLINE_SALES={cash:0,card:0};  // πλήθος πωλήσεων 15€
+const TZ='Europe/Athens';
+function todayLocal(d){
+  const x=d?new Date(d):new Date();
+  return x.toLocaleDateString('en-CA',{timeZone:TZ});
+}
+const today=()=>todayLocal();
+const $=id=>document.getElementById(id);
+function msg(el,t,ok){el.className='msg '+(ok?'ok':'err');el.textContent=t;if(ok)setTimeout(()=>{el.textContent='';el.className='';},4000);}
+function fmtDateGR(){const d=new Date();const days=['Κυριακή','Δευτέρα','Τρίτη','Τετάρτη','Πέμπτη','Παρασκευή','Σάββατο'];const months=['Ιανουαρίου','Φεβρουαρίου','Μαρτίου','Απριλίου','Μαΐου','Ιουνίου','Ιουλίου','Αυγούστου','Σεπτεμβρίου','Οκτωβρίου','Νοεμβρίου','Δεκεμβρίου'];return days[d.getDay()]+', '+d.getDate()+' '+months[d.getMonth()]+' '+d.getFullYear();}
+function eur(n){return (Math.round((n||0)*100)/100).toFixed(2)+' €';}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function openAdminSettingsSafe(tab){
+  return (async function(){
+    for(let i=0;i<50&&!window.__openAdminSettings;i++) await new Promise(r=>setTimeout(r,100));
+    if(!window.__openAdminSettings) throw new Error('Settings module failed — κάνε refresh (F5)');
+    await window.__openAdminSettings(tab);
+  })().catch(e=>alert((e&&e.message)||e));
+}
+window.openAdminSettingsSafe=openAdminSettingsSafe;
+function salesRowTotals(r){
+  let cash,card;
+  if(r.store==='Online'){
+    cash=(r.qty20_cash||0)*ONLINE_PRICE+(r.qty5_cash||0)*5;
+    card=(r.qty20_card||0)*ONLINE_PRICE+(r.qty5_card||0)*5;
+  }else{
+    cash=(r.qty5_cash||0)*5+(r.qty20_cash||0)*20+(r.qty25_cash||0)*25+(r.qty30_cash||0)*30+(r.qty40_cash||0)*40;
+    card=(r.qty5_card||0)*5+(r.qty20_card||0)*20+(r.qty25_card||0)*25+(r.qty30_card||0)*30+(r.qty40_card||0)*40;
+  }
+  (r.accessories||[]).forEach(a=>{const v=parseFloat(a.price)||0;if(a.pay==='card')card+=v;else cash+=v;});
+  return {cash,card};
+}
+const isOnline=()=>MY_STORE==='Online';
+$('loginBtn').onclick=async()=>{
+  const email=$('email').value.trim(),pass=$('pass').value;$('loginBtn').disabled=true;
+  const {error}=await sb.auth.signInWithPassword({email,password:pass});$('loginBtn').disabled=false;
+  if(error){msg($('loginMsg'),'Λάθος στοιχεία: '+error.message,false);return;}
+  await afterLogin();
+};
+$('logoutBtn').onclick=async()=>{await sb.auth.signOut();location.reload();};
+
+async function loadCumulative(){
+  let cashSum=0;
+  const r1=await sb.from('sales').select('*').eq('store', MY_STORE);
+  (r1.data||[]).forEach(r=>{ cashSum += salesRowTotals(r).cash; });
+  let depSum=0;
+  const r2=await sb.from('deposits').select('amount,created_at,photo_path,note').eq('store', MY_STORE).order('created_at',{ascending:false});
+  (r2.data||[]).forEach(d=>{ depSum += parseFloat(d.amount)||0; });
+  let expSum=0;
+  const r3=await sb.from('expenses').select('amount,note,created_at').eq('store', MY_STORE).order('created_at',{ascending:false});
+  (r3.data||[]).forEach(e=>{ expSum += parseFloat(e.amount)||0; });
+  CUM = { total: cashSum-depSum-expSum, deposits: r2.data||[], expenses: r3.data||[] };
+  renderCumulative();
+}
+function renderCumulative(){
+  const el=$('cumTotal'); if(!el) return;
+  el.textContent = eur(CUM.total);
+  const list=$('depList');
+  if(list){
+    if(!CUM.deposits.length) list.innerHTML='<span style="color:var(--mut)">Καμία κατάθεση ακόμη.</span>';
+    else list.innerHTML = CUM.deposits.map(d=>{
+      const dt=new Date(d.created_at).toLocaleString('el-GR');
+      return '<div style="display:flex;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.1);padding:6px 0"><span>'+dt+'</span><span style="font-weight:700">-'+eur(parseFloat(d.amount)||0)+'</span></div>';
+    }).join('');
+  }
+  const expList=$('expList');
+  if(expList){
+    if(!CUM.expenses.length) expList.innerHTML='<span style="color:var(--mut)">Κανένα έξοδο ακόμη.</span>';
+    else expList.innerHTML = CUM.expenses.map(e=>{
+      const dt=new Date(e.created_at).toLocaleString('el-GR');
+      const note=(e.note||'').replace(/</g,'&lt;');
+      return '<div style="display:flex;justify-content:space-between;gap:10px;border-bottom:1px solid rgba(255,255,255,.1);padding:6px 0"><span>'+dt+(note?' — '+note:'')+'</span><span style="font-weight:700;color:#fca5a5">-'+eur(parseFloat(e.amount)||0)+'</span></div>';
+    }).join('');
+  }
+}
+function syncCashUiForStore(){
+  const hide=isOnline();
+  ['cumCard','expCard'].forEach(id=>{ const el=$(id); if(el) el.classList.toggle('hidden', hide); });
+}
+async function doDeposit(){
+  const amt=parseFloat($('depAmount').value);
+  const fileEl=$('depPhoto'); const file=fileEl&&fileEl.files&&fileEl.files[0];
+  const m=$('depMsg');
+  if(!amt||amt<=0){ m.textContent='Συμπλήρωσε έγκυρο ποσό.'; m.style.color='#c00'; return; }
+  if(amt>CUM.total){ m.textContent='Το ποσό υπερβαίνει το διαθέσιμο ταμείο ('+eur(CUM.total)+').'; m.style.color='#c00'; return; }
+  if(!file){ m.textContent='Επισύναψε φωτογραφία απόδειξης.'; m.style.color='#c00'; return; }
+  m.textContent='Αποθήκευση...'; m.style.color='var(--mut)';
+  let photoPath=null;
+  try{
+    const ext=(file.name.split('.').pop()||'jpg');
+    photoPath=MY_STORE+'/'+Date.now()+'.'+ext;
+    const up=await sb.storage.from('deposits').upload(photoPath, file, {upsert:false});
+    if(up.error) throw up.error;
+  }catch(e){ m.textContent='Σφάλμα ανεβάσματος: '+(e.message||e); m.style.color='#c00'; return; }
+  const rpc=await (window.__tameiaQueueRpc||((fn,a)=>sb.rpc(fn,a)))('make_deposit', { p_store: MY_STORE, p_amount: amt, p_photo_path: photoPath, p_note: null });
+  if(rpc.error){ m.textContent='Σφάλμα: '+rpc.error.message; m.style.color='#c00'; return; }
+  m.textContent='Η κατάθεση καταχωρήθηκε.'; m.style.color='green';
+  $('depAmount').value=''; if(fileEl) fileEl.value='';
+  await loadCumulative();
+}
+async function doExpense(){
+  const amt=parseFloat($('expAmount').value);
+  const note=($('expNote').value||'').trim();
+  const m=$('expMsg');
+  if(!amt||amt<=0){ msg(m,'Συμπλήρωσε έγκυρο ποσό.',false); return; }
+  if(amt>CUM.total){ msg(m,'Το ποσό υπερβαίνει το διαθέσιμο ταμείο ('+eur(CUM.total)+').',false); return; }
+  $('expBtn').disabled=true;
+  const rpc=await (window.__tameiaQueueRpc||((fn,a)=>sb.rpc(fn,a)))('make_expense', { p_store: MY_STORE, p_amount: amt, p_note: note||null });
+  $('expBtn').disabled=false;
+  if(rpc.error){ msg(m,'Σφάλμα: '+rpc.error.message,false); return; }
+  msg(m,'Το έξοδο καταχωρήθηκε.',true);
+  $('expAmount').value=''; $('expNote').value='';
+  await loadCumulative();
+}
+let __ADMIN_RESTORE=null;
+let __IMPERSONATE_UID=null;
+function showBackBtn(){
+  let b=document.getElementById('backToAdmin');
+  if(!b){ b=document.createElement('button'); b.id='backToAdmin'; b.textContent='← Επιστροφή στον Πίνακα';
+    b.style.cssText='position:fixed;top:10px;left:10px;z-index:9999;background:#8b3df0;color:#fff;border:none;border-radius:8px;padding:10px 16px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(0,0,0,.4)';
+    b.onclick=backToAdmin; document.body.appendChild(b); }
+  b.style.display='block';
+}
+function backToAdmin(){
+  const b=document.getElementById('backToAdmin'); if(b) b.style.display='none';
+  document.getElementById('app').classList.add('hidden');
+  document.getElementById('central').classList.add('hidden');
+  const sl=document.getElementById('seller'); if(sl) sl.classList.add('hidden');
+  __IMPERSONATE_UID=null; window.__IMPERSONATE_UID=null; window.MY_UID=null;
+  MY_STORE=__ADMIN_RESTORE?__ADMIN_RESTORE.store:null; MY_ROLE='admin';
+  MY_EMPLOYEE_ID=__ADMIN_RESTORE?__ADMIN_RESTORE.employee_id:null;
+  $('storeLabel').textContent='Πίνακας Διαχείρισης';
+  document.getElementById('admin').classList.remove('hidden');
+}
+async function viewAsUser(user){
+  if(!user||!user.id) return;
+  __ADMIN_RESTORE={store:MY_STORE,role:MY_ROLE,employee_id:MY_EMPLOYEE_ID};
+  MY_STORE=user.store||null; MY_ROLE=user.role; MY_EMPLOYEE_ID=user.employee_id||null;
+  __IMPERSONATE_UID=user.role==='seller'?user.id:null;
+  window.__IMPERSONATE_UID=__IMPERSONATE_UID;
+  window.MY_UID=null;
+  document.getElementById('admin').classList.add('hidden');
+  document.getElementById('app').classList.add('hidden');
+  document.getElementById('central').classList.add('hidden');
+  const sl=document.getElementById('seller'); if(sl) sl.classList.add('hidden');
+  if(user.role==='admin'){
+    $('storeLabel').textContent='Πίνακας Διαχείρισης (προβολή)';
+    document.getElementById('admin').classList.remove('hidden');
+    if(window.__bindAdminNavAll) window.__bindAdminNavAll();
+  }else if(user.role==='hr'){
+    $('storeLabel').textContent='HR (προβολή)';
+    document.getElementById('admin').classList.remove('hidden');
+    if(window.__bindAdminNavAll) window.__bindAdminNavAll();
+    const hrBtn=document.getElementById('navHR'); if(hrBtn) hrBtn.click();
+  }else if(user.role==='seller'){
+    $('storeLabel').textContent='Πωλητής — '+(user.email||'');
+    $('seller').classList.remove('hidden');
+    if(window.initSellerPanel) await window.initSellerPanel();
+  }else if(user.role==='warehouse'){
+    $('storeLabel').textContent='Κεντρική Αποθήκη';
+    document.getElementById('central').classList.remove('hidden');
+    initCentral();
+  }else{
+    $('storeLabel').textContent=(MY_STORE||'')+(isOnline()?' (Online)':'');
+    document.getElementById('app').classList.remove('hidden'); $('regDate').value=fmtDateGR();
+    await loadProducts(); await loadStock(); await loadSales(); await loadCash();
+    buildSalesUI(); buildWarehouseUI(); renderAll();
+    await loadCumulative(); syncCashUiForStore();
+    const db=$('depBtn'); if(db) db.onclick=doDeposit;
+    const eb=$('expBtn'); if(eb) eb.onclick=doExpense;
+    if(MY_EMPLOYEE_ID&&window.initMyPayPanel) window.initMyPayPanel();
+  }
+  showBackBtn();
+  window.scrollTo(0,0);
+}
+window.viewAsUser=viewAsUser;
+async function openViewAsModal(){
+  let users;
+  try{
+    const r=await sb.functions.invoke('admin-settings',{body:{action:'list_users'}});
+    if(r.error) throw new Error(r.error.message||'Σφάλμα');
+    if(!r.data?.ok) throw new Error(r.data?.error||'Σφάλμα');
+    users=r.data.users||[];
+  }catch(e){ return alert(e.message); }
+  const roleLabels={admin:'Admin',hr:'HR',staff:'Staff',warehouse:'Αποθήκη',seller:'Πωλητής'};
+  const bg=document.createElement('div'); bg.id='viewAsModal';
+  bg.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;z-index:10000;padding:16px';
+  let h='<div class="card" style="width:620px;max-width:96vw;margin:0;max-height:85vh;overflow:auto"><h2>👁 Προβολή ως χρήστης</h2><p style="color:var(--mut);font-size:13px;margin:-4px 0 12px">Βλέπεις την εφαρμογή όπως τη βλέπει ο χρήστης — για έλεγχο και διόρθωση.</p><table><thead><tr><th>Email</th><th>Ρόλος</th><th>Κατάστημα</th><th></th></tr></thead><tbody>';
+  users.forEach(u=>{ h+='<tr><td><b>'+esc(u.email)+'</b></td><td>'+esc(roleLabels[u.role]||u.role)+'</td><td>'+esc(u.store||'-')+'</td><td style="text-align:right"><button class="small" data-viewas="'+u.id+'">Μπες</button></td></tr>'; });
+  h+='</tbody></table><button class="del" style="width:auto;margin-top:12px" type="button" id="viewAsClose">Κλείσιμο</button></div>';
+  bg.innerHTML=h; document.body.appendChild(bg);
+  bg.querySelectorAll('[data-viewas]').forEach(btn=>{ btn.onclick=()=>{ const u=users.find(x=>x.id===btn.dataset.viewas); bg.remove(); if(u) viewAsUser(u); }; });
+  document.getElementById('viewAsClose').onclick=()=>bg.remove();
+}
+window.openViewAsModal=openViewAsModal;
+let STORE_HC={};
+async function loadStoreSettings(){
+  const r=await sb.from('store_settings').select('store,hourly_cost');
+  STORE_HC={}; (r.data||[]).forEach(x=>{ STORE_HC[x.store]=parseFloat(x.hourly_cost)||0; });
+}
+async function saveHourly(store, val){
+  const v=parseFloat(val)||0; STORE_HC[store]=v;
+  const up=await sb.from('store_settings').upsert({store:store, hourly_cost:v, updated_at:new Date().toISOString()}, {onConflict:'store'});
+  if(up.error){ alert('Σφάλμα αποθήκευσης: '+up.error.message); return; }
+  loadDashboard();
+}
+function cogsForRow(r){
+  // κόστος πωληθέντων: πακέτα 20->8, 30&40->11.7 (μετρητά+κάρτα ποσότητες). Online εκτός.
+  if(r.store==='Online') return ((r.qty20_cash||0)+(r.qty20_card||0))*11.7 + ((r.qty5_cash||0)+(r.qty5_card||0))*0.05;
+  const q20=(r.qty20_cash||0)+(r.qty20_card||0);
+  const q25=(r.qty25_cash||0)+(r.qty25_card||0);
+  const q30=(r.qty30_cash||0)+(r.qty30_card||0);
+  const q40=(r.qty40_cash||0)+(r.qty40_card||0);
+  return q20*8 + q25*10 + (q30+q40)*11.7;
+}
+function pkgCountRow(r){
+  if(r.store==='Online') return (r.qty20_cash||0)+(r.qty20_card||0)+(r.qty5_cash||0)+(r.qty5_card||0);
+  return (r.qty20_cash||0)+(r.qty20_card||0)+(r.qty25_cash||0)+(r.qty25_card||0)+(r.qty30_cash||0)+(r.qty30_card||0)+(r.qty40_cash||0)+(r.qty40_card||0);
+}
+function renderDayChartAndFinancials(sales, cash, start, end){
+  // group per date
+  const days={};
+  function ensure(d){ if(!days[d]) days[d]={date:d, pkgs:0, revenue:0, cogs:0, hours:0, payroll:0, airport:0, phRevenue:0}; return days[d]; }
+  sales.forEach(r=>{ const d=ensure(r.sale_date); const a=salesAmount(r); d.revenue+=a.cash+a.card; d.pkgs+=pkgCountRow(r); d.cogs+=cogsForRow(r); if(PHYSICAL_STORES.indexOf(r.store)>=0){ d.phRevenue+=a.cash+a.card; } });
+  cash.forEach(r=>{ const d=ensure(r.reg_date); const h=hoursDiff(r.open_time,r.close_time); d.hours+=h; if(PHYSICAL_STORES.indexOf(r.store)>=0){ d.payroll+=h*(STORE_HC[r.store]||0); } });
+  Object.values(days).forEach(d=>{ d.airport=d.phRevenue*0.28; d.profit=d.revenue - d.cogs - d.payroll - d.airport; });
+  const list=Object.values(days).sort((a,b)=>a.date<b.date?-1:1);
+  drawDayChart(list);
+  renderFinancials(list);
+}
+function renderFinancials(list){
+  const fb=$('finBody'); if(!fb) return;
+  if(!list.length){ fb.innerHTML='<span style="color:var(--mut)">Δεν υπάρχουν δεδομένα.</span>'; return; }
+  let h='<table><thead><tr><th>Ημ/νία</th><th>Τζίρος</th><th>Κόστος πωληθέντων</th><th>Μισθοδοσία</th><th>28% Αεροδρόμιο</th><th>Κέρδος</th></tr></thead><tbody>';
+  let tR=0,tC=0,tP=0,tA=0,tPr=0;
+  list.forEach(d=>{ tR+=d.revenue;tC+=d.cogs;tP+=d.payroll;tA+=d.airport;tPr+=d.profit;
+    const col=d.profit>=0?'#22c55e':'#ef4444';
+    h+='<tr><td>'+d.date+'</td><td>'+eur(d.revenue)+'</td><td>'+eur(d.cogs)+'</td><td>'+eur(d.payroll)+'</td><td>'+eur(d.airport)+'</td><td style="color:'+col+';font-weight:700">'+eur(d.profit)+'</td></tr>'; });
+  h+='<tr style="border-top:2px solid var(--pink);font-weight:700"><td>ΣΥΝΟΛΟ</td><td>'+eur(tR)+'</td><td>'+eur(tC)+'</td><td>'+eur(tP)+'</td><td>'+eur(tA)+'</td><td style="color:'+(tPr>=0?'#22c55e':'#ef4444')+'">'+eur(tPr)+'</td></tr>';
+  h+='</tbody></table>'; fb.innerHTML=h;
+}
+function drawDayChart(list){
+  const cv=$('dayChart'); if(!cv) return; const ctx=cv.getContext('2d');
+  const W=cv.width,H=cv.height; ctx.clearRect(0,0,W,H);
+  const padL=48,padR=52,padT=18,padB=42; const plotW=W-padL-padR, plotH=H-padT-padB;
+  if(!list.length){ ctx.fillStyle='#888'; ctx.font='14px sans-serif'; ctx.fillText('Δεν υπάρχουν δεδομένα.',padL,padT+20); return; }
+  const maxPkg=Math.max(1,...list.map(d=>d.pkgs)); const maxRev=Math.max(1,...list.map(d=>d.revenue));
+  const n=list.length; const bw=Math.max(4, Math.min(40, plotW/n*0.6)); const step=plotW/n;
+  // axes
+  ctx.strokeStyle='#5b2a8a'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(padL,padT); ctx.lineTo(padL,padT+plotH); ctx.lineTo(padL+plotW,padT+plotH); ctx.stroke();
+  // bars (packages)
+  ctx.fillStyle='#8b3df0';
+  list.forEach((d,i)=>{ const x=padL+step*i+step/2-bw/2; const bh=(d.pkgs/maxPkg)*plotH; ctx.fillRect(x,padT+plotH-bh,bw,bh); });
+  // line (revenue)
+  ctx.strokeStyle='#e83fc0'; ctx.lineWidth=2.5; ctx.beginPath();
+  list.forEach((d,i)=>{ const x=padL+step*i+step/2; const y=padT+plotH-(d.revenue/maxRev)*plotH; if(i===0)ctx.moveTo(x,y); else ctx.lineTo(x,y); });
+  ctx.stroke();
+  ctx.fillStyle='#e83fc0'; list.forEach((d,i)=>{ const x=padL+step*i+step/2; const y=padT+plotH-(d.revenue/maxRev)*plotH; ctx.beginPath(); ctx.arc(x,y,3,0,7); ctx.fill(); });
+  // x labels (day number)
+  ctx.fillStyle='#bbb'; ctx.font='10px sans-serif'; ctx.textAlign='center';
+  list.forEach((d,i)=>{ if(n>20 && i%2!==0) return; const x=padL+step*i+step/2; const dd=d.date.slice(8,10); ctx.fillText(dd,x,padT+plotH+14); });
+  // y left (pkg) and right (rev)
+  ctx.textAlign='right'; ctx.fillStyle='#8b3df0'; ctx.fillText(String(maxPkg),padL-6,padT+8);
+  ctx.fillStyle='#e83fc0'; ctx.textAlign='left'; ctx.fillText(Math.round(maxRev)+'€',padL+plotW+6,padT+8);
+}
+async function viewAs(store, role){
+  __ADMIN_RESTORE={store:MY_STORE, role:MY_ROLE, employee_id:MY_EMPLOYEE_ID};
+  MY_STORE=store; MY_ROLE=role;
+  document.getElementById('admin').classList.add('hidden');
+  document.getElementById('app').classList.add('hidden');
+  document.getElementById('central').classList.add('hidden');
+  const sl=document.getElementById('seller'); if(sl) sl.classList.add('hidden');
+  if(role==='warehouse'){
+    $('storeLabel').textContent=store;
+    document.getElementById('central').classList.remove('hidden');
+    initCentral();
+  } else {
+    $('storeLabel').textContent=(MY_STORE||'')+(isOnline()?' (Online)':'');
+    document.getElementById('app').classList.remove('hidden'); $('regDate').value=fmtDateGR();
+    await loadProducts(); await loadStock(); await loadSales(); await loadCash();
+    buildSalesUI(); buildWarehouseUI(); renderAll();
+    await loadCumulative(); syncCashUiForStore();
+    const db=$('depBtn'); if(db) db.onclick=doDeposit;
+    const eb=$('expBtn'); if(eb) eb.onclick=doExpense;
+    if(PHYSICAL_STORES.indexOf(MY_STORE)>=0){ const tq=$('tabQrEs'); if(tq) tq.classList.remove('hidden'); }
+  }
+  showBackBtn();
+  window.scrollTo(0,0);
+}
+async function afterLogin(){
+  const {data:{user}}=await sb.auth.getUser();if(!user)return;
+  const {data:prof}=await sb.from('profiles').select('store,role,employee_id').eq('id',user.id).single();
+  MY_STORE=prof?.store||null;MY_ROLE=prof?.role||null;MY_EMPLOYEE_ID=prof?.employee_id||null;
+  await loadAppSettings();
+  $('login').classList.add('hidden');$('appHeader').classList.remove('hidden');$('hdate').textContent=fmtDateGR();
+  if(MY_ROLE==='admin'){ $('storeLabel').textContent='Πίνακας Διαχείρισης';$('admin').classList.remove('hidden');const hs=$('hdrSettingsBtn');if(hs){hs.classList.remove('hidden');hs.onclick=openAdminSettingsSafe;}const va=$('hdrViewAsBtn');if(va){va.classList.remove('hidden');va.onclick=openViewAsModal;}initDashboard();if(window.__ensureAdminSettings)window.__ensureAdminSettings();if(window.__ensureAdminTopNav)window.__ensureAdminTopNav();if(window.__bindAdminNavAll)window.__bindAdminNavAll();}
+  else if(MY_ROLE==='seller'){ $('storeLabel').textContent='Πωλητής'; $('seller').classList.remove('hidden'); if(window.initSellerPanel) window.initSellerPanel(); }
+  else if(MY_ROLE==='warehouse'){ $('storeLabel').textContent='Κεντρική Αποθήκη';$('central').classList.remove('hidden');initCentral(); }
+  else {
+    $('storeLabel').textContent=(MY_STORE||'')+(isOnline()?' (Online)':'');
+    $('app').classList.remove('hidden');$('regDate').value=fmtDateGR();
+    await loadProducts();await loadStock();await loadSales();await loadCash();
+    buildSalesUI();buildWarehouseUI();renderAll();
+    if(MY_ROLE!=='admin'&&MY_ROLE!=='warehouse'){
+      await loadCumulative(); syncCashUiForStore();
+      const db=$('depBtn'); if(db) db.onclick=doDeposit;
+      const eb=$('expBtn'); if(eb) eb.onclick=doExpense;
+    }
+    if(MY_EMPLOYEE_ID&&window.initMyPayPanel) window.initMyPayPanel();
+    if(PHYSICAL_STORES.indexOf(MY_STORE)>=0){ const tq=$('tabQrEs'); if(tq) tq.classList.remove('hidden'); }
+  }
+}
+sb.auth.getSession().then(({data})=>{if(data.session)afterLogin();});
+</script>
+<script>
+document.querySelectorAll('.tabs button[data-sec]').forEach(b=>{
+  b.onclick=()=>{document.querySelectorAll('.tabs button[data-sec]').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));$('sec-'+b.dataset.sec).classList.add('active');if(b.dataset.sec==='qresim'&&window.loadQrWarehouse)window.loadQrWarehouse();};
+});
+function myProducts(){ return isOnline()?ONLINE_PRODUCTS:LOADED_TYPES; }
+function emptyStock(){ if(!STOCK[EMPTY_NAME]) STOCK[EMPTY_NAME]={empty:0,l10:0,lun:0,lvf:0,es:0,ee:0,ls:0,le:0}; return STOCK[EMPTY_NAME]; }
+function loadedQty(p){
+  const s=STOCK[p]||{};
+  if(p==='10GB') return s.l10||0;
+  if(p==='Unlimited WU') return s.lun||0;
+  if(p==='Unlimited Vodafone') return s.lvf||0;
+  return 0;
+}
+function setLoadedQty(p,v){
+  if(!STOCK[p]) STOCK[p]={empty:0,l10:0,lun:0,lvf:0,es:0,ee:0,ls:0,le:0};
+  if(p==='10GB') STOCK[p].l10=v;
+  else if(p==='Unlimited WU') STOCK[p].lun=v;
+  else if(p==='Unlimited Vodafone') STOCK[p].lvf=v;
+}
+async function loadProducts(){
+  let {data}=await sb.from('products').select('name').eq('store',MY_STORE).order('created_at');
+  PRODUCTS=(data||[]).map(r=>r.name);
+  const want=isOnline()?ONLINE_PRODUCTS:PHYSICAL_CATALOG;
+  for(const n of want){ if(!PRODUCTS.includes(n)){ await sb.from('products').insert({store:MY_STORE,name:n}); PRODUCTS.push(n);} }
+  if(!isOnline()){ for(const b of STORE_BRANDS){ if(!PRODUCTS.includes(b.key)){ await sb.from('products').insert({store:MY_STORE,name:b.key}); PRODUCTS.push(b.key);} } }
+}
+async function loadStock(){
+  let {data}=await sb.from('stock').select('*').eq('store',MY_STORE);STOCK={};
+  (data||[]).forEach(r=>{
+    STOCK[r.product]={empty:r.empty||0,l10:r.loaded_10gb||0,lun:r.loaded_unlim||0,lvf:r.product==='Unlimited Vodafone'?(r.load_sim||0):0,es:r.empty_sim||0,ee:r.empty_esim||0,ls:r.product==='Unlimited Vodafone'?0:(r.load_sim||0),le:r.load_esim||0};
+  });
+  if(!isOnline()){
+    PHYSICAL_CATALOG.forEach(p=>{ if(!STOCK[p]) STOCK[p]={empty:0,l10:0,lun:0,lvf:0,es:0,ee:0,ls:0,le:0}; });
+    STORE_BRANDS.forEach(b=>{ if(!STOCK[b.key]) STOCK[b.key]={empty:0,l10:0,lun:0,lvf:0,es:0,ee:0,ls:0,le:0}; });
+  } else PRODUCTS.forEach(p=>{ if(!STOCK[p]) STOCK[p]={empty:0,l10:0,lun:0,lvf:0,es:0,ee:0,ls:0,le:0}; });
+}
+async function loadSales(){
+  let {data}=await sb.from('sales').select('*').eq('store',MY_STORE).eq('sale_date',today()).maybeSingle();
+  if(data){SALES={q20c:data.qty20_cash||0,q20k:data.qty20_card||0,q25c:data.qty25_cash||0,q25k:data.qty25_card||0,q30c:data.qty30_cash||0,q30k:data.qty30_card||0,q40c:data.qty40_cash||0,q40k:data.qty40_card||0,accessories:data.accessories||[]};}
+  else{SALES={q20c:0,q20k:0,q25c:0,q25k:0,q30c:0,q30k:0,q40c:0,q40k:0,accessories:[]};}
+  if(SALES.accessories.length===0)SALES.accessories=[{code:'',price:'',pay:'cash'}];
+  // Online: χρησιμοποιούμε qty20_cash/card ως μετρητής πακέτων 15€
+  if(isOnline()){ ONLINE_SALES={cash:data?data.qty20_cash||0:0,card:data?data.qty20_card||0:0}; }
+}
+async function loadCash(){
+  let {data}=await sb.from('cashreg').select('*').eq('store',MY_STORE).eq('reg_date',today()).maybeSingle();
+  CASH=data||{employee:'',open_time:'',close_time:''};
+}
+async function saveStock(p){
+  const s=STOCK[p];
+  const row={store:MY_STORE,product:p,empty:s.empty||0,loaded_10gb:s.l10||0,loaded_unlim:s.lun||0,empty_sim:s.es||0,empty_esim:s.ee||0,load_esim:s.le||0,updated_at:new Date().toISOString()};
+  if(p==='Unlimited Vodafone') row.load_sim=s.lvf||0;
+  else row.load_sim=s.ls||0;
+  const q=window.__tameiaQueueUpsert||((t,r,o)=>sb.from(t).upsert(r,o));
+  await q('stock',row,{onConflict:'store,product'});
+}
+async function saveSales(){
+  if(isOnline()){
+    return;
+  } else {
+    const tot=q=>SALES['q'+q+'c']+SALES['q'+q+'k'];
+    const row={store:MY_STORE,sale_date:today(),qty20:tot('20'),qty30:tot('30'),qty40:tot('40'),qty20_cash:SALES.q20c,qty20_card:SALES.q20k,qty25_cash:SALES.q25c,qty25_card:SALES.q25k,qty30_cash:SALES.q30c,qty30_card:SALES.q30k,qty40_cash:SALES.q40c,qty40_card:SALES.q40k,accessories:SALES.accessories,updated_at:new Date().toISOString()};
+    const q=window.__tameiaQueueUpsert||((t,r,o)=>sb.from(t).upsert(r,o));
+    await q('sales',row,{onConflict:'store,sale_date'});
+  }
+}
+async function saveCash(){
+  const row={store:MY_STORE,reg_date:today(),employee:CASH.employee,open_time:CASH.open_time,close_time:CASH.close_time,updated_at:new Date().toISOString()};
+  const q=window.__tameiaQueueUpsert||((t,r,o)=>sb.from(t).upsert(r,o));
+  await q('cashreg',row,{onConflict:'store,reg_date'});
+}
+</script>
+<script>
+// ---- build SALES UI ----
+function buildSalesUI(){
+  const box=$('pkgBox'); box.innerHTML='';
+  if(isOnline()){
+    box.innerHTML='<div class="lockedOnline" style="padding:18px;border:1px dashed #b39ddb;border-radius:12px;background:#f5f0fb;text-align:center;color:#5e35b1;"><div style="font-size:34px;margin-bottom:6px;">🔒</div><div style="font-weight:600;font-size:15px;">Οι πωλήσεις Online ενημερώνονται αυτόματα από το connectphone.eu</div><div style="font-size:13px;opacity:.75;margin-top:4px;">Η χειροκίνητη καταχώρηση είναι απενεργοποιημένη.</div></div>';
+  } else {
+    PACKAGE_PRICES.forEach(pkg=>{
+      const d=document.createElement('div');d.className='pkg';
+      d.innerHTML='<span class="pname">'+pkg+'€</span><select id="prod'+pkg+'"><option value="">— Τύπος —</option>'+LOADED_TYPES.map(n=>'<option>'+n+'</option>').join('')+'</select>'
+        +'<select id="pay'+pkg+'" class="pay"><option value="cash">Μετρητά</option><option value="card">Κάρτα</option></select>'
+        +'<div class="counter"><button type="button" class="minus" onclick="chgPkgPending(\''+pkg+'\',-1)">−</button><span class="qty" id="q'+pkg+'">0</span><button type="button" onclick="chgPkgPending(\''+pkg+'\',1)">+</button></div>'
+        +'<button type="button" class="salebtn" onclick="commitPkgSale(\''+pkg+'\')">Πώληση</button>';
+      box.appendChild(d);
+    });
+    PACKAGE_PRICES.forEach(pkg=>{ const el=$('q'+pkg); if(el) el.textContent=String(PENDING_PKG[pkg]||0); });
+  }
+}
+// ---- build WAREHOUSE UI ----
+function buildWarehouseUI(){
+  const box=$('whBox'); box.innerHTML='';
+  if(isOnline()){
+    // Άδεια (5€) και Φορτωμένα (15€), ξεχωριστά SIM/eSIM ανά προϊόν
+    let empty='<div class="card"><h3>Άδεια <span class="badge">5€</span></h3><table><thead><tr><th>Προϊόν</th><th>SIM</th><th>eSIM</th></tr></thead><tbody id="onEmpty"></tbody></table></div>';
+    let load='<div class="card"><h3>Φορτωμένα <span class="badge">15€</span></h3><table><thead><tr><th>Προϊόν</th><th>SIM</th><th>eSIM</th><th></th></tr></thead><tbody id="onLoad"></tbody></table><p style="font-size:13px;color:var(--mut)">Φόρτωση → −1 από Άδεια ίδιου τύπου.</p></div>';
+    box.innerHTML=empty+load;
+  } else {
+    box.innerHTML='<div class="card"><h3>Άδεια πακέτα <span class="badge">5€</span></h3><table><thead><tr><th>Προϊόν</th><th>SIM</th><th>eSIM</th></tr></thead><tbody id="emptyBody"></tbody></table></div>'
+      +'<div class="card"><h3>Φορτωμένα <span class="badge">15€</span></h3><table><thead><tr><th>Προϊόν</th><th>SIM</th><th>eSIM</th><th></th></tr></thead><tbody id="loadedBody"></tbody></table><p style="font-size:13px;color:var(--mut)">Φόρτωση → −1 από Άδεια ίδιου τύπου (SIM ή eSIM).</p></div>'
+      +'<div class="card" id="esimCatalogCard"><h3>🛒 eSIM προς πώληση — connectphone.eu</h3><p style="font-size:13px;color:var(--mut);margin-top:-6px">Τραβάεις από την κεντρική αποθήκη (συγχρονισμένη με WooCommerce/Elementor).</p><div id="esimCatalog"><div class="spin">Φόρτωση catalog...</div></div><div id="esimPullMsg" style="font-size:13px;margin-top:8px"></div></div>';
+  }
+}
+// ---- totals ----
+function calcTotals(){
+  if(isOnline()){
+    const cash=ONLINE_SALES.cash*ONLINE_PRICE, card=ONLINE_SALES.card*ONLINE_PRICE;
+    let c=cash,k=card; SALES.accessories.forEach(a=>{const v=parseFloat(a.price)||0;if(a.pay==='card')k+=v;else c+=v;});
+    return {cash:c,card:k,total:c+k};
+  }
+  let cash=SALES.q20c*20+SALES.q25c*25+SALES.q30c*30+SALES.q40c*40, card=SALES.q20k*20+SALES.q25k*25+SALES.q30k*30+SALES.q40k*40;
+  SALES.accessories.forEach(a=>{const v=parseFloat(a.price)||0;if(a.pay==='card')card+=v;else cash+=v;});
+  return {cash,card,total:cash+card};
+}
+function renderCashTotals(){const t=calcTotals();$('cashCashT').textContent=eur(t.cash);$('cashCardT').textContent=eur(t.card);$('cashTotal').textContent=eur(t.total);$('dayTotal').textContent=eur(t.total);}
+function renderCash(){
+  $('employee').value=CASH.employee||'';$('openTime').value=CASH.open_time||'';$('closeTime').value=CASH.close_time||'';
+  $('employee').oninput=()=>{CASH.employee=$('employee').value;saveCash();};
+  $('openTime').onchange=()=>{CASH.open_time=$('openTime').value;saveCash();};
+  $('closeTime').onchange=()=>{CASH.close_time=$('closeTime').value;saveCash();};
+  renderCashTotals();
+}
+function renderSales(){
+  if(isOnline()){ $('qOnline').textContent=ONLINE_SALES.cash+ONLINE_SALES.card; }
+  else { PACKAGE_PRICES.forEach(pkg=>{ const el=$('q'+pkg); if(el) el.textContent=String(PENDING_PKG[pkg]||0); }); }
+  renderAcc(); renderCashTotals();
+}
+function renderAcc(){
+  $('accList').innerHTML='';
+  SALES.accessories.forEach((a,i)=>{
+    const row=document.createElement('div');row.className='acc-row';
+    const paySel='<select class="pay"><option value="cash"'+(a.pay!=='card'?' selected':'')+'>Μετρητά</option><option value="card"'+(a.pay==='card'?' selected':'')+'>Κάρτα</option></select>';
+    row.innerHTML='<input class="code" placeholder="Κωδικός / Προϊόν" value="'+(a.code||'').replace(/"/g,'&quot;')+'"><input class="price" type="number" step="0.01" placeholder="Τιμή" value="'+(a.price||'')+'">'+paySel+'<button class="del">×</button>';
+    const c=row.children[0],pr=row.children[1],pay=row.children[2],del=row.children[3];
+    c.oninput=()=>{a.code=c.value;saveSales();};pr.oninput=()=>{a.price=pr.value;renderCashTotals();saveSales();};
+    pay.onchange=()=>{a.pay=pay.value;renderCashTotals();saveSales();};
+    del.onclick=()=>{SALES.accessories.splice(i,1);if(SALES.accessories.length===0)SALES.accessories=[{code:'',price:'',pay:'cash'}];renderAcc();renderCashTotals();saveSales();};
+    $('accList').appendChild(row);
+  });
+}
+function addAccRow(){SALES.accessories.push({code:'',price:'',pay:'cash'});renderAcc();}
+async function loadEsimCatalog(){
+  const box=$('esimCatalog'); if(!box) return;
+  try{
+    const {data,error}=await sb.from('woo_catalog').select('*').eq('sim_type','esim').eq('woo_status','publish').order('brand').order('package_eur');
+    if(error) throw error;
+    window.__ESIM_CATALOG=data||[];
+    renderEsimCatalog();
+  }catch(e){
+    box.innerHTML='<div class="msg err" style="display:block">Catalog: '+String(e.message||e)+'</div>';
+  }
+}
+function renderEsimCatalog(){
+  const box=$('esimCatalog'); if(!box) return;
+  const items=window.__ESIM_CATALOG||[];
+  if(!items.length){ box.innerHTML='<p style="color:var(--mut)">Δεν βρέθηκαν eSIM στο site. Τρέξε sync από Admin.</p>'; return; }
+  box.innerHTML='<div class="esim-grid">'+items.map(it=>{
+    const kind=it.package_eur===5?'Άδειο 5€':'Φορτωμένο 15€';
+    const img=it.image_url?('<img src="'+it.image_url+'" alt="">'):'';
+    return '<div class="esim-item">'+img+'<div class="esim-meta"><div class="name">'+esc(it.brand)+' · '+esc(it.store_product)+'</div><div class="sub">'+esc(kind)+' · Site: '+(it.stock_qty||0)+' · Κεντρική: <span id="cen_'+it.variation_id+'">…</span></div></div><div class="esim-pull"><input type="number" min="1" value="1" id="qty_'+it.variation_id+'"><button class="load1" onclick="pullEsim('+it.variation_id+')">Ανάληψη</button></div></div>';
+  }).join('')+'</div>';
+  refreshCentralEsimHints();
+}
+async function refreshCentralEsimHints(){
+  const {data}=await sb.from('stock').select('product,empty_esim,load_esim').eq('store',CENTRAL);
+  const map={}; (data||[]).forEach(r=>{ map[r.product]=r; });
+  (window.__ESIM_CATALOG||[]).forEach(it=>{
+    const el=$('cen_'+it.variation_id); if(!el) return;
+    const r=map[it.store_product]||{};
+    el.textContent=String(it.package_eur===5?(r.empty_esim||0):(r.load_esim||0));
+  });
+}
+async function pullEsim(variationId){
+  const msg=$('esimPullMsg'); const qty=parseInt($('qty_'+variationId)?.value)||1;
+  if(msg){ msg.textContent='Ανάληψη...'; msg.style.color='var(--mut)'; }
+  try{
+    const {data,error}=await sb.rpc('pull_esim_to_store',{p_variation_id:variationId,p_qty:qty});
+    if(error) throw error;
+    if(msg){ msg.textContent='✓ '+qty+'× '+data.product+' ('+(data.package_eur===5?'άδειο':'φορτωμένο')+' eSIM)'; msg.style.color='#86efac'; }
+    await loadStock(); renderWarehouse(); refreshCentralEsimHints();
+  }catch(e){
+    if(msg){ msg.textContent='✗ '+(e.message||e); msg.style.color='#fca5a5'; }
+  }
+}
+window.pullEsim=pullEsim;
+function showQrFullscreen(url,title){
+  const ov=document.createElement('div'); ov.className='qr-overlay';
+  ov.innerHTML='<img src="'+esc(url)+'" alt="QR"><div style="color:#fff;margin-top:10px;font-size:14px;text-align:center">'+esc(title||'')+'</div><button type="button" class="close">Κλείσιμο</button>';
+  ov.querySelector('.close').onclick=()=>ov.remove();
+  ov.onclick=e=>{ if(e.target===ov) ov.remove(); };
+  document.body.appendChild(ov);
+}
+async function qrInvoke(action,payload){
+  const {data,error}=await sb.functions.invoke('qr-warehouse',{body:Object.assign({action},payload||{})});
+  if(error) throw new Error(error.message||'Σφάλμα QR');
+  if(!data?.ok) throw new Error(data?.error||'Σφάλμα QR');
+  return data;
+}
+window.loadQrWarehouse=async function(){
+  const box=$('qrEsBox'); if(!box) return;
+  box.innerHTML='<div class="spin">Φόρτωση από connectphone.eu...</div>';
+  try{
+    const data=await qrInvoke('list');
+    const hist=await qrInvoke('history');
+    const avail=data.available||[];
+  let html='<div class="card"><h3>📱 Διαθέσιμα Unlimited eSIM (15€)</h3><p style="font-size:13px;color:var(--mut);margin-top:-6px">Μόνο φορτωμένα unlimited eSIM από connectphone.eu · όχι SIM · όχι 10GB · '+avail.length+' διαθέσιμα · '+data.taken+' ήδη πήραν καταστήματα</p>';
+    if(!avail.length) html+='<p style="color:var(--mut)">Δεν υπάρχουν διαθέσιμα unlimited eSIM QR αυτή τη στιγμή.</p>';
+    else{
+      html+='<div class="qr-list">'+avail.map(q=>{
+        const img=q.image_url?('<img src="'+esc(q.image_url)+'" alt="" style="width:48px;height:48px;border-radius:8px;object-fit:cover;background:#fff">'):'';
+        return '<div class="qr-card">'+img+'<div class="meta"><div class="t">'+esc(q.title)+'</div><div class="s">'+(q.serial?('Serial: '+esc(q.serial)):'')+'</div></div><div class="acts"><button class="small" type="button" data-show="'+q.wp_qr_id+'">📱 Προβολή</button><button class="load1" type="button" data-claim="'+q.wp_qr_id+'">✓ Πήρα αυτό</button></div></div>';
+      }).join('')+'</div>';
+    }
+    html+='</div><div class="card"><h3>Ιστορικό '+esc(MY_STORE||'')+'</h3><div id="qrHistList">';
+    const claims=hist.claims||[];
+    if(!claims.length) html+='<p style="color:var(--mut)">Καμία καταχώρηση ακόμα.</p>';
+    else html+='<table><thead><tr><th>Ημ/νία</th><th>Τίτλος</th><th>Serial</th><th></th></tr></thead><tbody>'+claims.map(c=>{
+      const d=new Date(c.claimed_at).toLocaleString('el-GR');
+      const btn=c.image_url?('<button class="small" type="button" data-show-h="'+esc(c.image_url)+'" data-title="'+esc(c.wp_title)+'">📱</button>'):'';
+      return '<tr><td>'+esc(d)+'</td><td>'+esc(c.wp_title)+'</td><td>'+esc(c.serial||'')+'</td><td>'+btn+'</td></tr>';
+    }).join('')+'</tbody></table>';
+    html+='</div></div>';
+    box.innerHTML=html;
+    box.querySelectorAll('[data-show]').forEach(btn=>{
+      btn.onclick=()=>{ const id=btn.dataset.show; const q=avail.find(x=>String(x.wp_qr_id)===id); if(q&&q.image_url) showQrFullscreen(q.image_url,q.title); else alert('Δεν βρέθηκε εικόνα QR'); };
+    });
+    box.querySelectorAll('[data-show-h]').forEach(btn=>{
+      btn.onclick=()=>showQrFullscreen(btn.dataset.showH,btn.dataset.title);
+    });
+    box.querySelectorAll('[data-claim]').forEach(btn=>{
+      btn.onclick=async()=>{
+        if(!confirm('Καταχώρηση ότι πήρες αυτό το QR;')) return;
+        btn.disabled=true;
+        try{
+          const emp=$('employee')?.value||'';
+          await qrInvoke('claim',{wp_qr_id:+btn.dataset.claim,employee_name:emp});
+          await loadQrWarehouse();
+        }catch(e){ alert(String(e.message||e)); btn.disabled=false; }
+      };
+    });
+  }catch(e){
+    box.innerHTML='<div class="msg err" style="display:block">'+esc(String(e.message||e))+'</div>';
+  }
+};
+window.loadQrAdmin=async function(){
+  const box=document.getElementById('qrAdminBody'); if(!box) return;
+  box.innerHTML='<div class="spin">Φόρτωση...</div>';
+  try{
+    const [list,hist]=await Promise.all([qrInvoke('list'),qrInvoke('history')]);
+    const claims=hist.claims||[];
+    let html='<p style="font-size:13px;margin:0 0 10px"><b>'+(list.available||[]).length+'</b> διαθέσιμα unlimited eSIM · <b>'+list.taken+'</b> πήραν καταστήματα · <b>'+list.total_wp+'</b> συνολικά στο site</p>';
+    if(!claims.length) html+='<p style="color:var(--mut)">Καμία ενεργειά ακόμα.</p>';
+    else{
+      html+='<div style="overflow-x:auto"><table><thead><tr><th>Ημ/νία</th><th>Κατάστημα</th><th>Τίτλος</th><th>Serial</th><th>Εργαζόμενος</th></tr></thead><tbody>';
+      html+=claims.map(c=>'<tr><td>'+esc(new Date(c.claimed_at).toLocaleString('el-GR'))+'</td><td><b>'+esc(c.store)+'</b></td><td>'+esc(c.wp_title)+'</td><td>'+esc(c.serial||'')+'</td><td>'+esc(c.employee_name||'—')+'</td></tr>').join('');
+      html+='</tbody></table></div>';
+    }
+    box.innerHTML=html;
+  }catch(e){
+    box.innerHTML='<div class="msg err" style="display:block">'+esc(String(e.message||e))+'</div>';
+  }
+};
+function brandStock(key){
+  if(!STOCK[key]) STOCK[key]={empty:0,l10:0,lun:0,lvf:0,es:0,ee:0,ls:0,le:0};
+  return STOCK[key];
+}
+function renderBrandWarehouse(brands, emptyTbId, loadTbId){
+  const emptyTb=$(emptyTbId), loadTb=$(loadTbId);
+  if(!emptyTb||!loadTb) return;
+  emptyTb.innerHTML='';
+  brands.forEach(({key,label})=>{
+    const s=brandStock(key);
+    const tr=document.createElement('tr');
+    tr.innerHTML='<td>'+label+'</td><td><input type="number" min="0" value="'+(s.es||0)+'"></td><td><input type="number" min="0" value="'+(s.ee||0)+'"></td>';
+    const[sim,esim]=tr.querySelectorAll('input');
+    sim.onchange=ev=>{ s.es=parseInt(ev.target.value)||0; saveStock(key); };
+    esim.onchange=ev=>{ s.ee=parseInt(ev.target.value)||0; saveStock(key); };
+    emptyTb.appendChild(tr);
+  });
+  loadTb.innerHTML='';
+  brands.forEach(({key,label})=>{
+    const s=brandStock(key);
+    const tr=document.createElement('tr');
+    tr.innerHTML='<td>'+label+'</td><td><input type="number" min="0" value="'+(s.ls||0)+'"></td><td><input type="number" min="0" value="'+(s.le||0)+'"></td><td><button class="load1" data-k="sim">+1 SIM</button> <button class="load1" data-k="esim">+1 eSIM</button></td>';
+    const[sim,esim]=tr.querySelectorAll('input');
+    sim.onchange=ev=>{ s.ls=parseInt(ev.target.value)||0; saveStock(key); };
+    esim.onchange=ev=>{ s.le=parseInt(ev.target.value)||0; saveStock(key); };
+    tr.querySelectorAll('button').forEach(btn=>{
+      btn.onclick=async()=>{
+        const k=btn.dataset.k;
+        if(k==='sim'){
+          if((s.es||0)<=0){ alert('Δεν υπάρχουν άδεια SIM για '+label); return; }
+          s.es--; s.ls++;
+        }else{
+          if((s.ee||0)<=0){ alert('Δεν υπάρχουν άδεια eSIM για '+label); return; }
+          s.ee--; s.le++;
+        }
+        await saveStock(key); renderWarehouse();
+      };
+    });
+    loadTb.appendChild(tr);
+  });
+}
+function renderWarehouse(){
+  if(isOnline()){ renderBrandWarehouse(ONLINE_BRANDS,'onEmpty','onLoad'); return; }
+  renderBrandWarehouse(STORE_BRANDS,'emptyBody','loadedBody');
+  loadEsimCatalog();
+}
+function renderOnlineWh(){
+  renderBrandWarehouse(ONLINE_BRANDS,'onEmpty','onLoad');
+}
+function renderAll(){renderCash();renderSales();renderWarehouse();}
+</script>
+<script>
+function resetPkgRow(pkg){
+  PENDING_PKG[pkg]=0;
+  const q=$('q'+pkg); if(q) q.textContent='0';
+  const p=$('prod'+pkg); if(p) p.value='';
+  const pay=$('pay'+pkg); if(pay) pay.value='cash';
+}
+function chgPkgPending(pkg,delta){
+  const sel=$('prod'+pkg)?.value;
+  if(delta>0&&!sel){alert('Επίλεξε τύπο φορτωμένου για το πακέτο '+pkg+'€');return;}
+  const cur=PENDING_PKG[pkg]||0;
+  if(delta>0){
+    if(loadedQty(sel)<cur+1){alert('Δεν υπάρχει απόθεμα «'+sel+'».');return;}
+    PENDING_PKG[pkg]=cur+1;
+  }else{
+    if(cur<=0) return;
+    PENDING_PKG[pkg]=cur-1;
+  }
+  const el=$('q'+pkg); if(el) el.textContent=String(PENDING_PKG[pkg]);
+}
+async function commitPkgSale(pkg){
+  const sel=$('prod'+pkg)?.value;
+  const pay=$('pay'+pkg)?.value||'cash';
+  const qty=PENDING_PKG[pkg]||0;
+  const suf=pay==='card'?'k':'c';
+  if(!sel){alert('Επίλεξε τύπο φορτωμένου για το πακέτο '+pkg+'€');return;}
+  if(qty<=0){alert('Βάλε ποσότητα με + πριν την πώληση.');return;}
+  if(loadedQty(sel)<qty){alert('Δεν υπάρχει αρκετό απόθεμα «'+sel+'».');return;}
+  setLoadedQty(sel, loadedQty(sel)-qty);
+  SALES['q'+pkg+suf]+=qty;
+  resetPkgRow(pkg);
+  await saveStock(sel);
+  await saveSales();
+  renderSales();
+  renderWarehouse();
+  renderCashTotals();
+  if(typeof loadCumulative==='function') await loadCumulative();
+  if(typeof syncCashUiForStore==='function') syncCashUiForStore();
+}
+window.chgPkgPending=chgPkgPending;
+window.commitPkgSale=commitPkgSale;
+async function chgOnline(delta){
+  const prod=$('oProd').value,kind=$('oKind').value,pay=$('oPay').value;
+  const lk=kind==='sim'?'ls':'le';
+  if(delta>0){if(!STOCK[prod]||(STOCK[prod][lk]||0)<=0){alert('Δεν υπάρχει φορτωμένο '+kind.toUpperCase()+' για '+prod);return;}STOCK[prod][lk]--;ONLINE_SALES[pay]++;await saveStock(prod);}
+  else{if(ONLINE_SALES[pay]<=0){alert('Δεν υπάρχει πώληση με '+(pay==='card'?'Κάρτα':'Μετρητά')+' να αφαιρεθεί.');return;}ONLINE_SALES[pay]--;if(STOCK[prod]){STOCK[prod][lk]++;await saveStock(prod);}}
+  await saveSales();renderSales();renderWarehouse();
+}
+async function addProduct(){
+  const name=$('newProdName').value.trim();if(!name)return;
+  if(PRODUCTS.includes(name)){msg($('prodMsg'),'Υπάρχει ήδη.',false);return;}
+  const {error}=await sb.from('products').insert({store:MY_STORE,name});
+  if(error){msg($('prodMsg'),'Σφάλμα: '+error.message,false);return;}
+  PRODUCTS.push(name);STOCK[name]={empty:0,l10:0,lun:0,es:0,ee:0,ls:0,le:0};await saveStock(name);
+  $('newProdName').value='';msg($('prodMsg'),'Προστέθηκε.',true);buildSalesUI();renderWarehouse();
+}
+$('closeShiftBtn').onclick=async()=>{
+  await saveSales();await saveCash();
+  const t=calcTotals();
+  let body='ΑΝΑΦΟΡΑ ΗΜΕΡΑΣ — '+MY_STORE+' — '+fmtDateGR()+'\n\nΕργαζόμενος: '+(CASH.employee||'-')+'\nΏρες: '+(CASH.open_time||'-')+' έως '+(CASH.close_time||'-')+'\n\nΤΑΜΕΙΟ ΗΜΕΡΑΣ\n- Μετρητά: '+t.cash.toFixed(2)+'€\n- Κάρτες: '+t.card.toFixed(2)+'€\n- ΣΥΝΟΛΟ: '+t.total.toFixed(2)+'€\n\nΠΩΛΗΣΕΙΣ\n';
+  if(isOnline()){ body+='- Πακέτα 15€: '+(ONLINE_SALES.cash+ONLINE_SALES.card)+' (Μετρητά '+ONLINE_SALES.cash+' / Κάρτα '+ONLINE_SALES.card+') = '+((ONLINE_SALES.cash+ONLINE_SALES.card)*15)+'€\n'; }
+  else { const n=q=>SALES['q'+q+'c']+SALES['q'+q+'k']; body+=PACKAGE_PRICES.map(p=>'- Πακέτα '+p+'€: '+n(p)+' (Μ '+SALES['q'+p+'c']+'/Κ '+SALES['q'+p+'k']+') = '+(n(p)*parseInt(p))+'€').join('\n')+'\n'; }
+  const acc=SALES.accessories.filter(a=>a.code||a.price).map(a=>'   • '+(a.code||'?')+' = '+(a.price||0)+'€ ('+(a.pay==='card'?'Κάρτα':'Μετρητά')+')').join('\n');
+  body+='- Αξεσουάρ:\n'+(acc||'   (κανένα)')+'\n\nΑΠΟΘΗΚΗ ('+MY_STORE+')\n';
+  if(isOnline()){ ONLINE_PRODUCTS.forEach(p=>{body+='- '+p+': Άδεια SIM '+STOCK[p].es+' / eSIM '+STOCK[p].ee+' | Φορτ. SIM '+STOCK[p].ls+' / eSIM '+STOCK[p].le+'\n';}); }
+  else { body+='- '+EMPTY_NAME+': '+(emptyStock().empty||0)+'\n'; LOADED_TYPES.forEach(p=>{ body+='- '+p+': '+loadedQty(p)+'\n'; }); }
+  window.location.href='mailto:'+REPORT_TO+'?subject='+encodeURIComponent('Αναφορά ημέρας '+MY_STORE+' '+today())+'&body='+encodeURIComponent(body);
+  msg($('shiftMsg'),'Άνοιξε το email σου με την αναφορά έτοιμη — πάτησε Αποστολή.',true);
+};
+// ---------- ADMIN DASHBOARD ----------
+function salesAmount(r){return salesRowTotals(r);}
+function hoursDiff(o,c){if(!o||!c)return 0;const[oh,om]=o.split(':').map(Number),[ch,cm]=c.split(':').map(Number);let m=(ch*60+cm)-(oh*60+om);if(m<0)m+=1440;return m/60;}
+function initDashboard(){
+  const y=new Date().getFullYear();const sel=$('fYear');sel.innerHTML='';
+  for(let yr=y;yr>=y-5;yr--){const o=document.createElement('option');o.value=yr;o.textContent=yr;sel.appendChild(o);}
+  $('fMonth').value=String(new Date().getMonth()+1);
+  $('loadDash').onclick=function(){DASH_RANGE=null;clearPbtn();loadDashboard();};
+  $('fYear').onchange=function(){DASH_RANGE=null;clearPbtn();loadDashboard();};
+  $('fMonth').onchange=function(){DASH_RANGE=null;clearPbtn();loadDashboard();};
+  document.querySelectorAll('#pbar .pbtn').forEach(function(b){ b.onclick=function(){ setRange(b.dataset.range,b); }; });
+  // default: today
+  const todayBtn=document.querySelector('#pbar .pbtn[data-range="today"]');
+  setRange('today',todayBtn);
+}
+function clearPbtn(){document.querySelectorAll('#pbar .pbtn').forEach(function(x){x.classList.remove('active');});}
+function toISO(d){return d.toISOString().slice(0,10);}
+function setRange(r,btn){
+  clearPbtn(); if(btn) btn.classList.add('active');
+  const now=new Date(); const todayStr=toISO(now);
+  const endNext=toISO(new Date(now.getTime()+86400000));
+  if(r==='all'){ DASH_RANGE={start:'2000-01-01',end:'2999-01-01'}; }
+  else if(r==='today'){ DASH_RANGE={start:todayStr,end:endNext}; }
+  else if(r==='yesterday'){ const yd=new Date(now.getTime()-86400000); DASH_RANGE={start:toISO(yd),end:todayStr}; }
+  else { const days=parseInt(r); const from=new Date(now.getTime()-(days-1)*86400000); DASH_RANGE={start:toISO(from),end:endNext}; }
+  loadDashboard();
+}
+async function loadDashboard(){
+  $('dashBody').innerHTML='<div class="spin">Φόρτωση...</div>';
+  await loadStoreSettings();
+  const year=parseInt($('fYear').value),month=parseInt($('fMonth').value);let start,end;
+  if(DASH_RANGE){start=DASH_RANGE.start;end=DASH_RANGE.end;}else{if(month===0){start=year+'-01-01';end=(year+1)+'-01-01';}else{const mm=String(month).padStart(2,'0');start=year+'-'+mm+'-01';const nm=month===12?[year+1,1]:[year,month+1];end=nm[0]+'-'+String(nm[1]).padStart(2,'0')+'-01';}}
+  const {data:sales}=await sb.from('sales').select('*').gte('sale_date',start).lt('sale_date',end);
+  const {data:cash}=await sb.from('cashreg').select('*').gte('reg_date',start).lt('reg_date',end);
+  const agg={};ALL_STORES.forEach(s=>agg[s]={cash:0,card:0,hours:0});
+  (sales||[]).forEach(r=>{if(!agg[r.store])agg[r.store]={cash:0,card:0,hours:0};const a=salesAmount(r);agg[r.store].cash+=a.cash;agg[r.store].card+=a.card;});
+  (cash||[]).forEach(r=>{if(!agg[r.store])agg[r.store]={cash:0,card:0,hours:0};agg[r.store].hours+=hoursDiff(r.open_time,r.close_time);});
+  const dayMap={};
+  (sales||[]).forEach(r=>{const k=r.sale_date+'|'+r.store;dayMap[k]=dayMap[k]||{date:r.sale_date,store:r.store};const a=salesAmount(r);dayMap[k].cash=a.cash;dayMap[k].card=a.card;});
+  (cash||[]).forEach(r=>{const k=r.reg_date+'|'+r.store;dayMap[k]=dayMap[k]||{date:r.reg_date,store:r.store};dayMap[k].employee=r.employee;dayMap[k].hours=hoursDiff(r.open_time,r.close_time);});
+  const days=Object.values(dayMap).sort((a,b)=>a.date<b.date?1:(a.date>b.date?-1:(a.store<b.store?-1:1)));
+  let totCash=0,totCard=0,totHours=0;Object.values(agg).forEach(a=>{totCash+=a.cash;totCard+=a.card;totHours+=a.hours;});
+  const cumMap={}; ALL_STORES.forEach(st=>cumMap[st]=0);
+  const _as=await sb.from('sales').select('*');
+  (_as.data||[]).forEach(r=>{ if(cumMap[r.store]===undefined)cumMap[r.store]=0; cumMap[r.store]+=salesRowTotals(r).cash; });
+  const _ad=await sb.from('deposits').select('store,amount');
+  (_ad.data||[]).forEach(d=>{ if(cumMap[d.store]===undefined)cumMap[d.store]=0; cumMap[d.store]-=parseFloat(d.amount)||0; });
+  const _ae=await sb.from('expenses').select('store,amount');
+  (_ae.data||[]).forEach(e=>{ if(cumMap[e.store]===undefined)cumMap[e.store]=0; cumMap[e.store]-=parseFloat(e.amount)||0; });
+  let html='<div class="kpis"><div class="kpi"><div class="k-l">Γενικό Σύνολο</div><div class="k-v">'+eur(totCash+totCard)+'</div></div><div class="kpi"><div class="k-l">Σύνολο Μετρητά</div><div class="k-v">'+eur(totCash)+'</div></div><div class="kpi"><div class="k-l">Σύνολο Κάρτες</div><div class="k-v">'+eur(totCard)+'</div></div><div class="kpi plain"><div class="k-l">Σύνολο Ωρών</div><div class="k-v">'+totHours.toFixed(1)+' ώρες</div></div></div>';
+  html+='<div class="card"><h3>Σωρευμένο Ταμείο (Διαθέσιμα Μετρητά) ανά Κατάστημα</h3><p style="font-size:13px;color:var(--mut)">Όλες οι ημερομηνίες — μετρητά πωλήσεων μείον καταθέσεις και έξοδα.</p><div class="storecards">';ALL_STORES.forEach(st=>{var v=cumMap[st]||0;html+='<div class="scard"><h4>'+st+'</h4><div class="row tot-row"><span>Διαθέσιμο</span><b>'+eur(v)+'</b></div></div>';});html+='</div></div>';html+='<div class="card"><h3>Ανά Κατάστημα</h3><div class="storecards">';
+  ALL_STORES.forEach(s=>{const a=agg[s]||{cash:0,card:0,hours:0};html+='<div class="scard"><h4>'+s+'</h4><div class="row"><span>Μετρητά</span><b>'+eur(a.cash)+'</b></div><div class="row"><span>Κάρτες</span><b>'+eur(a.card)+'</b></div><div class="row tot-row"><span>Σύνολο</span><b>'+eur(a.cash+a.card)+'</b></div><div class="row"><span>Ώρες</span><b>'+a.hours.toFixed(1)+'</b></div>'+(PHYSICAL_STORES.indexOf(s)>=0?('<div class="row" style="align-items:center"><span>€/ώρα εργασίας</span><input type="number" min="0" step="0.01" value="'+(STORE_HC[s]||0)+'" style="width:90px;padding:5px;margin:0" onchange="saveHourly(\''+s+'\',this.value)"></div>'):'')+'<button class="impbtn" onclick="viewAs(\''+s+'\',\'staff\')">Είσοδος ως '+s+'</button></div>';});
+  html+='</div></div><div class="card"><h3>Κεντρική Αποθήκη</h3><button class="impbtn" style="max-width:340px" onclick="viewAs(\'Κεντρική Αποθήκη\',\'warehouse\')">Είσοδος ως Κεντρική Αποθήκη</button></div><div class="card"><h3>Ανά Ημέρα</h3><div style="overflow-x:auto"><table><thead><tr><th>Ημ/νία</th><th>Κατάστημα</th><th>Εργαζόμενος</th><th>Ώρες</th><th>Μετρητά</th><th>Κάρτες</th><th>Σύνολο</th></tr></thead><tbody>';
+  if(days.length===0)html+='<tr><td colspan="7" style="color:var(--mut)">Δεν υπάρχουν δεδομένα.</td></tr>';
+  days.forEach(d=>{const c=d.cash||0,k=d.card||0;html+='<tr><td>'+d.date+'</td><td>'+d.store+'</td><td>'+(d.employee||'-')+'</td><td>'+(d.hours?d.hours.toFixed(1):'-')+'</td><td>'+eur(c)+'</td><td>'+eur(k)+'</td><td><b>'+eur(c+k)+'</b></td></tr>';});
+  html+='</tbody></table></div></div>';
+  $('dashBody').innerHTML=html;
+  renderDayChartAndFinancials(sales||[], cash||[], start, end);
+}
+</script>
+<script>
+let CSTOCK={}; // κεντρικό απόθεμα: product -> {es,ee,ls,le}  (es=άδεια sim, ee=άδεια esim, ls=ενεργ sim, le=ενεργ esim)
+function initCentral(){
+  document.querySelectorAll('.tabs button[data-csec]').forEach(b=>{b.onclick=()=>{document.querySelectorAll('.tabs button[data-csec]').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.csection').forEach(s=>s.classList.remove('active'));$('csec-'+b.dataset.csec).classList.add('active');if(b.dataset.csec==='all')loadAllStores();if(b.dataset.csec==='move')buildMoveUI();if(b.dataset.csec==='report')loadCentralReport();};});
+  loadCentralStock();
+}
+async function loadCentralStock(){
+  // products για κεντρική
+  let {data:prods}=await sb.from('products').select('name').eq('store',CENTRAL);
+  let names=(prods||[]).map(r=>r.name);
+  for(const n of CENTRAL_PRODUCTS){ if(!names.includes(n)){ await sb.from('products').insert({store:CENTRAL,name:n}); names.push(n);} }
+  let {data}=await sb.from('stock').select('*').eq('store',CENTRAL);CSTOCK={};
+  (data||[]).forEach(r=>{CSTOCK[r.product]={es:r.empty_sim||0,ee:r.empty_esim||0,ls:r.load_sim||0,le:r.load_esim||0};});
+  CENTRAL_PRODUCTS.forEach(p=>{if(!CSTOCK[p])CSTOCK[p]={es:0,ee:0,ls:0,le:0};});
+  renderCentralStock();
+}
+async function saveCentral(p){const s=CSTOCK[p];await sb.from('stock').upsert({store:CENTRAL,product:p,empty_sim:s.es,empty_esim:s.ee,load_sim:s.ls,load_esim:s.le,updated_at:new Date().toISOString()},{onConflict:'store,product'});}
+function renderCentralStock(){
+  let totES=0,totEE=0,totLS=0,totLE=0;CENTRAL_PRODUCTS.forEach(p=>{totES+=CSTOCK[p].es;totEE+=CSTOCK[p].ee;totLS+=CSTOCK[p].ls;totLE+=CSTOCK[p].le;});
+  let html='<div class="kpis"><div class="kpi"><div class="k-l">Άδεια (σύνολο)</div><div class="k-v">'+(totES+totEE)+'</div></div><div class="kpi"><div class="k-l">Ενεργ (σύνολο)</div><div class="k-v">'+(totLS+totLE)+'</div></div><div class="kpi plain"><div class="k-l">Άδεια SIM / eSIM</div><div class="k-v">'+totES+' / '+totEE+'</div></div><div class="kpi plain"><div class="k-l">ενεργ SIM / eSIM</div><div class="k-v">'+totLS+' / '+totLE+'</div></div></div>';
+  html+='<div class="card"><h3>Κεντρικό Απόθεμα</h3><div style="overflow-x:auto"><table><thead><tr><th>Προϊόν</th><th>Άδεια SIM</th><th>Άδεια eSIM</th><th>ενεργ SIM</th><th>ενεργ eSIM</th></tr></thead><tbody id="cstockBody"></tbody></table></div></div>';
+  $('centralStock').innerHTML=html;
+  const tb=$('cstockBody');
+  CENTRAL_PRODUCTS.forEach(p=>{const tr=document.createElement('tr');tr.innerHTML='<td>'+p+'</td>'+['es','ee','ls','le'].map(k=>'<td><input type="number" min="0" value="'+(CSTOCK[p][k]||0)+'" data-k="'+k+'"></td>').join('');tr.querySelectorAll('input').forEach(inp=>{inp.onchange=e=>{CSTOCK[p][inp.dataset.k]=parseInt(e.target.value)||0;saveCentral(p);renderCentralStock();};});tb.appendChild(tr);});
+}
+function fmtStockRow(st,r){
+  let empty,loaded;
+  if(st==='Online'||st===CENTRAL){ empty='SIM '+(r.empty_sim||0)+' / eSIM '+(r.empty_esim||0); loaded='ενεργ SIM '+(r.load_sim||0)+' / eSIM '+(r.load_esim||0); }
+  else if(r.product==='10GB'){ empty='—'; loaded=String(r.loaded_10gb||0); }
+  else if(r.product==='Unlimited WU'){ empty='—'; loaded=String(r.loaded_unlim||0); }
+  else if(r.product==='Unlimited Vodafone'){ empty='—'; loaded=String(r.load_sim||0); }
+  else if(r.product===EMPTY_NAME){ empty=String(r.empty||0); loaded='—'; }
+  else if(['Frog','WU','Cosmokarta'].includes(r.product)){ empty='SIM '+(r.empty_sim||0)+' / eSIM '+(r.empty_esim||0); loaded='ενεργ SIM '+(r.load_sim||0)+' / eSIM '+(r.load_esim||0); }
+  else { empty=String(r.empty||0); loaded='10GB '+(r.loaded_10gb||0)+' / Unlim '+(r.loaded_unlim||0); }
+  return {empty,loaded};
+}
+async function loadAllStores(){
+  $('allStores').innerHTML='<div class="spin">Φόρτωση...</div>';
+  let {data}=await sb.from('stock').select('*');
+  const byStore={};(data||[]).forEach(r=>{(byStore[r.store]=byStore[r.store]||[]).push(r);});
+  let html='';
+  const order=[CENTRAL,'Μύκονος','Σαντορίνη','Ρόδος','Online'];
+  order.forEach(st=>{ const rows=byStore[st];if(!rows)return;
+    const loadHdr=st===CENTRAL||st==='Online'?'ενεργ':'Φορτωμένα';
+    html+='<div class="card"><h3>'+st+'</h3><div style="overflow-x:auto"><table><thead><tr><th>Προϊόν</th><th>Άδεια</th><th>'+loadHdr+'</th></tr></thead><tbody>';
+    rows.forEach(r=>{
+      const f=fmtStockRow(st,r);
+      html+='<tr><td>'+r.product+'</td><td>'+f.empty+'</td><td>'+f.loaded+'</td></tr>';
+    });
+    html+='</tbody></table></div></div>';
+  });
+  $('allStores').innerHTML=html||'<div class="spin">Δεν υπάρχουν δεδομένα.</div>';
+}
+function buildMoveUI(){
+  $('moveBox').innerHTML='<div class="grid2">'
+    +'<div><label>Προϊόν</label><select id="mProd">'+CENTRAL_PRODUCTS.map(n=>'<option>'+n+'</option>').join('')+'</select></div>'
+    +'<div><label>Τύπος</label><select id="mKind"><option value="sim">SIM</option><option value="esim">eSIM</option></select></div>'
+    +'<div><label>Κατάσταση</label><select id="mState"><option value="empty">Άδειο</option><option value="loaded">Ενεργ</option></select></div>'
+    +'<div><label>Ποσότητα</label><input id="mQty" type="number" min="1" value="1"></div>'
+    +'<div><label>Ενέργεια</label><select id="mAction"><option value="ship">Αποστολή σε κατάστημα</option><option value="sale">Πώληση (εξαγωγή)</option></select></div>'
+    +'<div id="mToWrap"><label>Προς κατάστημα</label><select id="mTo">'+ALL_STORES.map(n=>'<option>'+n+'</option>').join('')+'</select></div>'
+    +'</div><button class="btn" id="doMove" style="margin-top:12px">Εκτέλεση</button><div id="moveMsg"></div>';
+  $('mAction').onchange=()=>{ $('mToWrap').style.display=$('mAction').value==='ship'?'block':'none'; };
+  $('doMove').onclick=doMove;
+}
+async function doMove(){
+  const prod=$('mProd').value,kind=$('mKind').value,state=$('mState').value,qty=parseInt($('mQty').value)||0,action=$('mAction').value;
+  if(qty<=0){msg($('moveMsg'),'Δώσε ποσότητα.',false);return;}
+  const ck=(state==='empty')?(kind==='sim'?'es':'ee'):(kind==='sim'?'ls':'le');
+  if((CSTOCK[prod][ck]||0)<qty){msg($('moveMsg'),'Δεν επαρκεί το κεντρικό απόθεμα ('+CSTOCK[prod][ck]+').',false);return;}
+  CSTOCK[prod][ck]-=qty; await saveCentral(prod);
+  if(action==='ship'){
+    const to=$('mTo').value;
+    // φέρε/φτιάξε stock row του παραλήπτη
+    let {data:row}=await sb.from('stock').select('*').eq('store',to).eq('product',prod).maybeSingle();
+    let r=row||{store:to,product:prod,empty:0,loaded_10gb:0,loaded_unlim:0,empty_sim:0,empty_esim:0,load_sim:0,load_esim:0};
+    if(to==='Online'){ r[ck==='es'?'empty_sim':ck==='ee'?'empty_esim':ck==='ls'?'load_sim':'load_esim']=(r[ck==='es'?'empty_sim':ck==='ee'?'empty_esim':ck==='ls'?'load_sim':'load_esim']||0)+qty; }
+    else if(kind==='esim'){
+      r[ck==='ee'?'empty_esim':'load_esim']=(r[ck==='ee'?'empty_esim':'load_esim']||0)+qty;
+      let {data:pr}=await sb.from('products').select('name').eq('store',to).eq('name',prod).maybeSingle();
+      if(!pr) await sb.from('products').insert({store:to,name:prod});
+    } else { // φυσικό κατάστημα SIM: άδειο/φορτωμένο ανά brand
+      const fk=state==='empty'?'empty_sim':'load_sim';
+      r[fk]=(r[fk]||0)+qty;
+      let {data:pr}=await sb.from('products').select('name').eq('store',to).eq('name',prod).maybeSingle();
+      if(!pr) await sb.from('products').insert({store:to,name:prod});
+    }
+    await sb.from('stock').upsert({store:to,product:prod,empty:r.empty||0,loaded_10gb:r.loaded_10gb||0,loaded_unlim:r.loaded_unlim||0,empty_sim:r.empty_sim||0,empty_esim:r.empty_esim||0,load_sim:r.load_sim||0,load_esim:r.load_esim||0,updated_at:new Date().toISOString()},{onConflict:'store,product'});
+    await sb.from('transfers').insert({from_store:CENTRAL,to_store:to,product:prod,kind:kind,state:state,qty:qty});
+    msg($('moveMsg'),'Στάλθηκαν '+qty+'x '+prod+' ('+kind.toUpperCase()+', '+(state==='empty'?'Άδειο':'Ενεργ')+') στο '+to+'.',true);
+  } else {
+    await sb.from('transfers').insert({from_store:CENTRAL,to_store:'ΠΩΛΗΣΗ',product:prod,kind:kind,state:state,qty:qty});
+    msg($('moveMsg'),'Εξήχθησαν '+qty+'x '+prod+' ('+kind.toUpperCase()+') ως πώληση.',true);
+  }
+  renderCentralStock();
+}
+async function buildWarehouseSnapshot(date){
+  const d=date||today();
+  const [{data:stockRows},{data:transfers},{data:sales}]=await Promise.all([
+    sb.from('stock').select('*'),
+    sb.from('transfers').select('*').gte('created_at',d+'T00:00:00').lte('created_at',d+'T23:59:59').order('created_at'),
+    sb.from('sales').select('*').eq('sale_date',d)
+  ]);
+  const byStore={};(stockRows||[]).forEach(r=>{(byStore[r.store]=byStore[r.store]||[]).push(r);});
+  const central={};CENTRAL_PRODUCTS.forEach(p=>{
+    const r=(byStore[CENTRAL]||[]).find(x=>x.product===p)||{};
+    central[p]={empty_sim:r.empty_sim||0,empty_esim:r.empty_esim||0,active_sim:r.load_sim||0,active_esim:r.load_esim||0};
+  });
+  const stores={};
+  [CENTRAL,...ALL_STORES].forEach(st=>{
+    stores[st]=(byStore[st]||[]).map(r=>{
+      const f=fmtStockRow(st,r);
+      return {product:r.product,empty:f.empty,active:f.loaded,raw:r};
+    });
+  });
+  let totEmpty=0,totActive=0;CENTRAL_PRODUCTS.forEach(p=>{totEmpty+=(central[p].empty_sim||0)+(central[p].empty_esim||0);totActive+=(central[p].active_sim||0)+(central[p].active_esim||0);});
+  const centralMoves=(transfers||[]).filter(t=>t.from_store===CENTRAL||t.to_store===CENTRAL);
+  const storeSales={};
+  (sales||[]).forEach(s=>{
+    if(!storeSales[s.store]) storeSales[s.store]={qty5:0,qty20:0,qty25:0,qty30:0,qty40:0};
+    storeSales[s.store].qty5+=(s.qty5_cash||0)+(s.qty5_card||0);
+    storeSales[s.store].qty20+=(s.qty20_cash||0)+(s.qty20_card||0);
+    storeSales[s.store].qty25+=(s.qty25_cash||0)+(s.qty25_card||0);
+    storeSales[s.store].qty30+=(s.qty30_cash||0)+(s.qty30_card||0);
+    storeSales[s.store].qty40+=(s.qty40_cash||0)+(s.qty40_card||0);
+  });
+  return {report_date:d,generated_at:new Date().toISOString(),central,stores,totals:{central_empty:totEmpty,central_active:totActive},transfers:centralMoves,store_sales:storeSales};
+}
+function renderSnapshotHtml(snap){
+  let h='<div class="card" style="background:rgba(255,255,255,.02)"><h3 style="margin-top:0">🏭 Κεντρική Αποθήκη — '+esc(snap.report_date)+'</h3>';
+  h+='<div class="kpis" style="margin-bottom:12px"><div class="kpi"><div class="k-l">Άδεια (σύνολο)</div><div class="k-v">'+(snap.totals?.central_empty||0)+'</div></div><div class="kpi"><div class="k-l">Ενεργ (σύνολο)</div><div class="k-v">'+(snap.totals?.central_active||0)+'</div></div></div>';
+  h+='<table><thead><tr><th>Προϊόν</th><th>Άδεια SIM</th><th>Άδεια eSIM</th><th>ενεργ SIM</th><th>ενεργ eSIM</th></tr></thead><tbody>';
+  CENTRAL_PRODUCTS.forEach(p=>{const c=snap.central[p]||{};h+='<tr><td>'+p+'</td><td>'+(c.empty_sim||0)+'</td><td>'+(c.empty_esim||0)+'</td><td>'+(c.active_sim||0)+'</td><td>'+(c.active_esim||0)+'</td></tr>';});
+  h+='</tbody></table></div>';
+  ALL_STORES.forEach(st=>{
+    const rows=snap.stores[st]||[]; if(!rows.length) return;
+    h+='<div class="card"><h3>🏪 '+esc(st)+'</h3><table><thead><tr><th>Προϊόν</th><th>Άδεια</th><th>'+(st==='Online'?'ενεργ':'Φορτωμένα')+'</th></tr></thead><tbody>';
+    rows.forEach(r=>{h+='<tr><td>'+esc(r.product)+'</td><td>'+esc(r.empty)+'</td><td>'+esc(r.active)+'</td></tr>';});
+    const ss=snap.store_sales?.[st];
+    if(ss&&(ss.qty5||ss.qty20||ss.qty25||ss.qty30||ss.qty40)){
+      h+='<tr style="border-top:2px solid var(--bdr)"><td colspan="3"><b>Πωλήσεις ημέρας:</b> 5€×'+ss.qty5+' · 20€×'+ss.qty20+' · 25€×'+ss.qty25+' · 30€×'+ss.qty30+' · 40€×'+ss.qty40+'</td></tr>';
+    }
+    h+='</tbody></table></div>';
+  });
+  const trs=snap.transfers||[];
+  h+='<div class="card"><h3>🚚 Κινήσεις Κεντρικής (ημέρας)</h3>';
+  if(!trs.length) h+='<p style="color:var(--mut);margin:0">Καμία κίνηση προς/από κεντρική.</p>';
+  else{
+    h+='<table><thead><tr><th>Ώρα</th><th>Από</th><th>Προς</th><th>Προϊόν</th><th>Τύπος</th><th>Κατάσταση</th><th>Ποσ.</th></tr></thead><tbody>';
+    trs.forEach(t=>{
+      const tm=t.created_at?new Date(t.created_at).toLocaleTimeString('el-GR',{hour:'2-digit',minute:'2-digit'}):'—';
+      const stLabel=t.state==='empty'?'Άδειο':'Ενεργ';
+      h+='<tr><td>'+tm+'</td><td>'+esc(t.from_store)+'</td><td>'+esc(t.to_store)+'</td><td>'+esc(t.product)+'</td><td>'+esc((t.kind||'').toUpperCase())+'</td><td>'+stLabel+'</td><td><b>'+(t.qty||0)+'</b></td></tr>';
+    });
+    h+='</tbody></table>';
+  }
+  h+='</div>';
+  return h;
+}
+async function loadCentralReport(){
+  const box=$('centralReport'); if(!box) return;
+  box.innerHTML='<div class="spin">Φόρτωση...</div>';
+  const td=today();
+  const [{data:todayRep},{data:history}]=await Promise.all([
+    sb.from('warehouse_daily_reports').select('id,report_date,created_at,snapshot').eq('report_date',td).maybeSingle(),
+    sb.from('warehouse_daily_reports').select('id,report_date,created_at,snapshot').order('report_date',{ascending:false}).limit(60)
+  ]);
+  let h='<div class="card"><div class="row" style="justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px"><div><h2 style="margin:0">📋 Ημερήσιο Report Αποθήκης</h2><p style="color:var(--mut);font-size:13px;margin:4px 0 0">Στο τέλος της ημέρας αποθηκεύεις την πλήρη εικόνα: κεντρική, καταστήματα και κινήσεις.</p></div>';
+  h+='<div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" style="width:auto" id="whRepPreview">👁 Προεπισκόπηση σήμερα</button><button class="btn" style="width:auto" id="whRepSave">'+(todayRep?'🔄 Ενημέρωση':'💾 Αποθήκευση')+' report '+td+'</button></div></div>';
+  if(todayRep) h+='<div class="msg ok" style="display:block;margin-bottom:12px">✓ Υπάρχει αποθηκευμένο report για σήμερα ('+new Date(todayRep.created_at).toLocaleString('el-GR')+')</div>';
+  else h+='<div class="msg err" style="display:block;margin-bottom:12px;font-size:13px">⚠️ Δεν έχει αποθηκευτεί report για σήμερα ακόμα.</div>';
+  h+='<div id="whRepPreviewBox"></div></div>';
+  h+='<div class="card"><h3>Προηγούμενες ημέρες</h3>';
+  if(!(history||[]).length) h+='<p style="color:var(--mut)">Κανένα report ακόμα.</p>';
+  else{
+    h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">';
+    (history||[]).forEach(r=>{h+='<button class="small wh-rep-day" data-id="'+r.id+'" type="button" style="margin:0">'+r.report_date+'</button>';});
+    h+='</div><div id="whRepHistoryBox"></div>';
+  }
+  h+='</div>';
+  box.innerHTML=h;
+  document.getElementById('whRepPreview').onclick=async()=>{
+    const pb=$('whRepPreviewBox'); pb.innerHTML='<div class="spin">...</div>';
+    pb.innerHTML=renderSnapshotHtml(await buildWarehouseSnapshot(td));
+  };
+  document.getElementById('whRepSave').onclick=async()=>{
+    const btn=document.getElementById('whRepSave'); btn.disabled=true;
+    try{
+      const snap=await buildWarehouseSnapshot(td);
+      const {data:{user}}=await sb.auth.getUser();
+      const {error}=await sb.from('warehouse_daily_reports').upsert({report_date:td,snapshot:snap,created_by:user?.id,created_at:new Date().toISOString()},{onConflict:'report_date'});
+      if(error) throw new Error(error.message);
+      loadCentralReport();
+    }catch(e){ alert(e.message); btn.disabled=false; }
+  };
+  box.querySelectorAll('.wh-rep-day').forEach(btn=>{
+    btn.onclick=()=>{
+      const r=(history||[]).find(x=>x.id===btn.dataset.id);
+      const hb=$('whRepHistoryBox'); if(!r||!hb) return;
+      box.querySelectorAll('.wh-rep-day').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      hb.innerHTML='<p style="font-size:12px;color:var(--mut);margin:-4px 0 10px">Αποθηκεύτηκε: '+new Date(r.created_at).toLocaleString('el-GR')+'</p>'+renderSnapshotHtml(r.snapshot);
+    };
+  });
+  if(todayRep&&todayRep.snapshot) $('whRepPreviewBox').innerHTML=renderSnapshotHtml(todayRep.snapshot);
+}
+</script>
+
+<!-- ========== LIVE / WOO / ALERTS / PWA ========== -->
+<script>
+(function(){
+  let liveChannel=null, alertChannel=null, prevLive={};
+  const LIVE_STORES=['Μύκονος','Σαντορίνη','Ρόδος','Online'];
+  const IDB_NAME='tameia-offline-v1', IDB_STORE='queue';
+
+  function openIdb(){
+    return new Promise((res,rej)=>{
+      const r=indexedDB.open(IDB_NAME,1);
+      r.onupgradeneeded=()=>{const db=r.result;if(!db.objectStoreNames.contains(IDB_STORE))db.createObjectStore(IDB_STORE,{keyPath:'id',autoIncrement:true});};
+      r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error);
+    });
+  }
+  async function queueOp(op){
+    const db=await openIdb();
+    return new Promise((res,rej)=>{const tx=db.transaction(IDB_STORE,'readwrite');tx.objectStore(IDB_STORE).add({...op,ts:Date.now()});tx.oncomplete=()=>{updatePendingCount();res();};tx.onerror=()=>rej(tx.error);});
+  }
+  async function flushQueue(){
+    if(!navigator.onLine) return;
+    const db=await openIdb();
+    const items=await new Promise((res,rej)=>{const tx=db.transaction(IDB_STORE,'readonly');const req=tx.objectStore(IDB_STORE).getAll();req.onsuccess=()=>res(req.result||[]);req.onerror=()=>rej(req.error);});
+    if(!items.length){updatePendingCount();return;}
+    for(const item of items){
+      try{
+        if(item.kind==='upsert') await sb.from(item.table).upsert(item.row,item.opts||{});
+        else if(item.kind==='rpc') await sb.rpc(item.fn, item.args||{});
+      }catch(e){console.warn('sync fail',item,e);continue;}
+      await new Promise((res,rej)=>{const tx=db.transaction(IDB_STORE,'readwrite');tx.objectStore(IDB_STORE).delete(item.id);tx.oncomplete=res;tx.onerror=()=>rej(tx.error);});
+    }
+    updatePendingCount();
+    if(typeof MY_ROLE!=='undefined'&&MY_ROLE==='admin'&&typeof refreshLiveCash==='function') refreshLiveCash();
+    else if(typeof MY_STORE!=='undefined'&&MY_STORE){ if(typeof loadSales==='function') await loadSales(); if(typeof loadCash==='function') await loadCash(); if(typeof renderAll==='function') renderAll(); if(typeof loadCumulative==='function') await loadCumulative(); }
+  }
+  function updatePendingCount(){
+    openIdb().then(db=>new Promise(res=>{const tx=db.transaction(IDB_STORE,'readonly');const req=tx.objectStore(IDB_STORE).count();req.onsuccess=()=>res(req.result||0);})).then(n=>{
+      let el=document.getElementById('syncPending');
+      if(!el&&n>0){el=document.createElement('div');el.id='syncPending';el.className='sync-pending';const w=document.querySelector('#app .wrap');if(w)w.prepend(el);}
+      if(el){el.textContent=n?('⏳ '+n+' εκκρεμείς συγχρονισμοί'):'';el.style.display=n?'block':'none';}
+    }).catch(()=>{});
+  }
+  window.__tameiaQueueUpsert=async function(table,row,opts){
+    if(navigator.onLine) return sb.from(table).upsert(row,opts||{});
+    await queueOp({kind:'upsert',table,row,opts}); return {data:null,error:null,offline:true};
+  };
+  window.__tameiaQueueRpc=async function(fn,args){
+    if(navigator.onLine) return sb.rpc(fn,args||{});
+    await queueOp({kind:'rpc',fn,args}); return {data:null,error:null,offline:true};
+  };
+
+  function setNetUi(){
+    const on=navigator.onLine;
+    const b=document.getElementById('offlineBanner'); if(b) b.classList.toggle('show',!on);
+    const ns=document.getElementById('netStatus'); if(ns){ns.textContent=on?'● Online':'● Offline';ns.style.color=on?'#86efac':'#fca5a5';}
+    if(on) flushQueue();
+  }
+  window.addEventListener('online',setNetUi);
+  window.addEventListener('offline',setNetUi);
+
+  if('serviceWorker' in navigator){
+    window.addEventListener('load',()=>{ navigator.serviceWorker.register('./sw.js').catch(e=>console.warn('SW',e)); });
+  }
+
+  async function refreshLiveCash(){
+    const td=today();
+    const box=document.getElementById('liveStores'); if(!box) return;
+    const {data:sales}=await sb.from('sales').select('*').eq('sale_date',td);
+    const agg={}; LIVE_STORES.forEach(s=>agg[s]={cash:0,card:0,avail:0});
+    (sales||[]).forEach(r=>{if(!agg[r.store])return;const a=salesRowTotals(r);agg[r.store].cash+=a.cash;agg[r.store].card+=a.card;});
+    const {data:allSales}=await sb.from('sales').select('*');
+    const {data:deps}=await sb.from('deposits').select('store,amount');
+    const {data:exps}=await sb.from('expenses').select('store,amount');
+    LIVE_STORES.forEach(st=>{
+      let c=0;(allSales||[]).filter(r=>r.store===st).forEach(r=>{c+=salesRowTotals(r).cash;});
+      (deps||[]).filter(d=>d.store===st).forEach(d=>{c-=parseFloat(d.amount)||0;});
+      (exps||[]).filter(e=>e.store===st).forEach(e=>{c-=parseFloat(e.amount)||0;});
+      agg[st].avail=c;
+    });
+    let html='';
+    LIVE_STORES.forEach(st=>{
+      const a=agg[st], tot=a.cash+a.card;
+      const prev=prevLive[st]||{};
+      const bump=(prev.cash!==a.cash||prev.card!==a.card)?' bump':'';
+      prevLive[st]={cash:a.cash,card:a.card};
+      html+='<div class="live-store'+bump+'"><h4>'+st+'</h4><div class="row"><span>Μετρητά σήμερα</span><b>'+eur(a.cash)+'</b></div><div class="row"><span>Κάρτες σήμερα</span><b>'+eur(a.card)+'</b></div><div class="row"><span>Διαθέσιμα μετρητά</span><b>'+eur(a.avail)+'</b></div><div class="today-total">'+eur(tot)+'</div></div>';
+    });
+    box.innerHTML=html;
+    box.querySelectorAll('.live-store.bump').forEach(el=>setTimeout(()=>el.classList.remove('bump'),600));
+    const dot=document.getElementById('liveDot'); if(dot){dot.classList.add('pulse');setTimeout(()=>dot.classList.remove('pulse'),600);}
+  }
+  window.refreshLiveCash=refreshLiveCash;
+
+  function initLiveRealtime(){
+    if(liveChannel) sb.removeChannel(liveChannel);
+    const dot=document.getElementById('liveDot'), st=document.getElementById('liveStatus');
+    liveChannel=sb.channel('live-tameia')
+      .on('postgres_changes',{event:'*',schema:'public',table:'sales'},()=>refreshLiveCash())
+      .on('postgres_changes',{event:'*',schema:'public',table:'cashreg'},()=>refreshLiveCash())
+      .on('postgres_changes',{event:'*',schema:'public',table:'deposits'},()=>refreshLiveCash())
+      .on('postgres_changes',{event:'*',schema:'public',table:'expenses'},()=>refreshLiveCash())
+      .subscribe(status=>{
+        if(dot) dot.classList.toggle('off', status!=='SUBSCRIBED');
+        if(st) st.textContent=status==='SUBSCRIBED'?'Live — συνδεδεμένο':'Realtime: '+status;
+      });
+    refreshLiveCash();
+  }
+
+  async function loadWooHealth(){
+    const body=document.getElementById('wooHealthBody'); if(!body) return;
+    const td=today();
+    try{
+      const [{data:stats},{data:log},{data:ordersDirect}] = await Promise.all([
+        sb.rpc('woo_health_stats',{p_date:td}),
+        sb.from('woo_sync_log').select('*').order('created_at',{ascending:false}).limit(1).maybeSingle(),
+        sb.from('woo_orders').select('payment,total,status,order_date').eq('order_date',td)
+      ]);
+      let cod=0,card=0,rev=0,todayCount=0;
+      if(stats){
+        todayCount=stats.order_count||0;
+        rev=parseFloat(stats.revenue)||0;
+        cod=stats.cod||0;
+        card=stats.card||0;
+      }else{
+        (ordersDirect||[]).forEach(o=>{
+          if(['cancelled','failed','trash','refunded'].includes(o.status)) return;
+          todayCount++;
+          rev+=parseFloat(o.total)||0;
+          if(o.payment==='cash') cod++; else card++;
+        });
+      }
+      const lastSync=log?new Date(log.created_at).toLocaleString('el-GR',{timeZone:TZ}):'—';
+      const syncOk=log?log.ok:null;
+      const unmapped=(log&&log.unmapped_skus)||[];
+      const catCnt=(log&&log.catalog_synced)||0;
+      const datesHint=(log&&log.dates_affected&&log.dates_affected.length)?('<div style="font-size:11px;color:var(--mut);margin-top:4px">Sync ημέρες: '+log.dates_affected.join(', ')+'</div>'):'';
+      const lb=stats&&(stats.lookback_count>0)?('<div class="woo-stat plain"><div class="lbl">Τελευταίες 3 μέρες</div><div class="val" style="font-size:16px">'+stats.lookback_count+' · '+eur(stats.lookback_revenue)+'</div></div>'):'';
+      body.innerHTML='<div class="woo-stat '+(syncOk===true?'ok':syncOk===false?'bad':'')+'"><div class="lbl">Τελευταίος sync</div><div class="val" style="font-size:14px">'+lastSync+'</div>'+datesHint+'</div><div class="woo-stat"><div class="lbl">Παραγγελίες σήμερα</div><div class="val">'+todayCount+'</div><div style="font-size:11px;color:var(--mut)">'+td+'</div></div>'+lb+'<div class="woo-stat"><div class="lbl">Catalog eSIM</div><div class="val">'+catCnt+'</div></div><div class="woo-stat"><div class="lbl">Τζίρος σήμερα</div><div class="val" style="font-size:16px">'+eur(rev)+'</div></div><div class="woo-stat"><div class="lbl">COD (μετρητά)</div><div class="val">'+cod+'</div></div><div class="woo-stat"><div class="lbl">Κάρτα</div><div class="val">'+card+'</div></div><div class="woo-stat '+(unmapped.length?'warn':'ok')+'"><div class="lbl">Unmapped SKUs</div><div class="val">'+unmapped.length+'</div></div>';
+      const um=document.getElementById('wooUnmapped');
+      if(um) um.innerHTML=unmapped.length?('<b>SKUs χωρίς mapping:</b> '+unmapped.map(s=>'<code>'+String(s).replace(/</g,'')+'</code>').join(' ')):'<span style="color:#86efac">✓ Όλα τα SKUs mapped</span>';
+    }catch(e){
+      body.innerHTML='<div class="msg err" style="display:block">Τρέξε το <code>features_migration.sql</code> στο Supabase SQL editor</div>';
+    }
+  }
+
+  async function triggerWooSync(){
+    const btn=document.getElementById('wooSyncBtn'), msg=document.getElementById('wooSyncMsg');
+    if(!btn) return;
+    btn.disabled=true; if(msg){msg.textContent='Συγχρονισμός...';msg.style.color='var(--mut)';}
+    try{
+      const res=await sb.functions.invoke('woo-sync',{body:{}});
+      const {data,error}=res;
+      if(error){
+        let detail=error.message||'Edge function error';
+        try{
+          if(error.context&&typeof error.context.json==='function'){
+            const body=await error.context.json();
+            if(body&&body.error) detail=body.error;
+          }else if(res.response){
+            const body=await res.response.clone().json().catch(()=>null);
+            if(body&&body.error) detail=body.error;
+          }
+        }catch(_e){}
+        throw new Error(detail);
+      }
+      if(data&&!data.ok) throw new Error(data.error||'Sync failed');
+      if(msg){msg.textContent='✓ Sync OK — '+((data&&data.orders_synced)||0)+' παραγγ., '+((data&&data.catalog_synced)||0)+' catalog, '+((data&&data.stock_applied)||0)+' stock';msg.style.color='#86efac';}
+      await loadWooHealth(); await refreshLiveCash();
+      await sb.functions.invoke('check-alerts',{body:{}}).catch(()=>{});
+      await loadAlerts();
+    }catch(e){
+      if(msg){msg.textContent='✗ '+((e&&e.message)||e);msg.style.color='#fca5a5';}
+      await loadWooHealth();
+    }
+    btn.disabled=false;
+  }
+
+  async function loadAlerts(){
+    const {data,error}=await sb.from('alerts').select('*').is('dismissed_at',null).order('created_at',{ascending:false}).limit(30);
+    if(error) return;
+    const alerts=data||[];
+    const cnt=document.getElementById('alertCount'), bell=document.getElementById('alertBell');
+    const unread=alerts.filter(a=>!a.read_at).length;
+    if(cnt){cnt.textContent=unread;cnt.classList.toggle('hidden',!unread);}
+    const panel=document.getElementById('alertPanel'); if(!panel) return;
+    if(!alerts.length){panel.innerHTML='<div style="padding:12px;color:var(--mut)">Καμία ενεργή ειδοποίηση</div>';return;}
+    panel.innerHTML=alerts.map(a=>'<div class="alert-item '+(a.severity==='critical'?'critical':'')+'"><div class="atitle">'+escHtml(a.title)+'</div><div class="abody">'+escHtml(a.body||'')+'</div><div class="ameta">'+(a.store||'')+' · '+new Date(a.created_at).toLocaleString('el-GR')+' <button class="small" style="width:auto;margin-left:8px;padding:4px 8px" data-dismiss="'+a.id+'">✓</button></div></div>').join('');
+    panel.querySelectorAll('[data-dismiss]').forEach(btn=>{btn.onclick=async()=>{await sb.from('alerts').update({dismissed_at:new Date().toISOString()}).eq('id',btn.dataset.dismiss);loadAlerts();};});
+    alerts.filter(a=>!a.read_at).forEach(a=>sb.from('alerts').update({read_at:new Date().toISOString()}).eq('id',a.id));
+    if(unread&&'Notification' in window&&Notification.permission==='granted'){
+      const top=alerts.find(a=>!a.read_at);
+      if(top) new Notification(top.title,{body:top.body||''});
+    }
+  }
+  function escHtml(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+  function initAlerts(){
+    const bell=document.getElementById('alertBell'); if(!bell) return;
+    bell.classList.remove('hidden');
+    bell.onclick=()=>{const p=document.getElementById('alertPanel');if(p)p.classList.toggle('open');};
+    document.addEventListener('click',e=>{const p=document.getElementById('alertPanel');if(p&&p.classList.contains('open')&&!p.contains(e.target)&&e.target!==bell&&!bell.contains(e.target))p.classList.remove('open');});
+    if('Notification' in window&&Notification.permission==='default') Notification.requestPermission();
+    if(alertChannel) sb.removeChannel(alertChannel);
+    alertChannel=sb.channel('alerts-live').on('postgres_changes',{event:'INSERT',schema:'public',table:'alerts'},()=>loadAlerts()).subscribe();
+    loadAlerts();
+    sb.functions.invoke('check-alerts').catch(()=>{});
+  }
+
+  window.initTameiaFeatures=function(role){
+    setNetUi(); updatePendingCount();
+    if(role==='admin'){
+      initLiveRealtime();
+      loadWooHealth();
+      initAlerts();
+      if(window.loadQrAdmin) window.loadQrAdmin();
+      const qrb=document.getElementById('qrAdminRefreshBtn'); if(qrb) qrb.onclick=()=>window.loadQrAdmin&&window.loadQrAdmin();
+      const wb=document.getElementById('wooSyncBtn'); if(wb) wb.onclick=triggerWooSync;
+      const asb=document.getElementById('adminOpenSettingsBtn'); if(asb) asb.onclick=()=>openAdminSettingsSafe('api');
+    }
+  };
+
+  const _initDash=initDashboard;
+  initDashboard=function(){ _initDash(); window.initTameiaFeatures('admin'); };
+  const _afterLogin=afterLogin;
+  afterLogin=async function(){
+    await _afterLogin();
+    if(MY_ROLE==='admin') window.initTameiaFeatures('admin');
+    else if(MY_ROLE!=='warehouse'){ setNetUi(); updatePendingCount(); }
+  };
+})();
+</script>
+
+<!-- ========== ΠΑΝΕΛ ΜΙΣΘΟΥ ΕΡΓΑΖΟΜΕΝΟΥ ========== -->
+<script>
+(function(){
+  const eur=n=>(Number(n)||0).toLocaleString('el-GR',{style:'currency',currency:'EUR'});
+  const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  function monthStart(d){const x=d?new Date(d):new Date();return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-01';}
+  function parseProfile(p){const b={contract:{hours_day:8,days_week:6,day_off:'Δευτέρα',gross:800,ensimo:true},agreement:{hours_day:10,days_week:7,target_monthly:2000},insurance:{employee_pct:16.12,employer_pct:22.29}};const raw=(p&&p.payroll_profile)||{};return{contract:Object.assign({},b.contract,raw.contract||{}),agreement:Object.assign({},b.agreement,raw.agreement||{}),insurance:Object.assign({},b.insurance,raw.insurance||{})};}
+  function calcView(prof,m,wh){
+    const bank=(+m.bank_base||0)+(+m.bank_easter||0)+(+m.bank_vacation||0)+(+m.bank_other||0);
+    const target=+prof.agreement.target_monthly||0;
+    const insE=m.insurance_employee!=null?+m.insurance_employee:bank*((+prof.insurance.employee_pct||0)/100);
+    const cash=m.cash_supplement!=null?+m.cash_supplement:Math.max(0,target-bank);
+    const extrasList=m.extras||[];
+    const extrasSum=extrasList.reduce((s,x)=>s+(+x.amount||0),0);
+    return{bank,target,cash,insE,net:bank-insE,total:cash+bank+extrasSum,extrasList,wh};
+  }
+  window.initMyPayPanel=async function(){
+    const tab=document.getElementById('tabMyPay'); if(tab) tab.classList.remove('hidden');
+    const box=document.getElementById('myPayBox'); if(!box||!MY_EMPLOYEE_ID) return;
+    box.innerHTML='<div class="spin">Φόρτωση...</div>';
+    const ym=new Date().toISOString().slice(0,7);
+    const [empR,payR,hR,mR]=await Promise.all([
+      sb.from('employees').select('*').eq('id',MY_EMPLOYEE_ID).single(),
+      sb.from('employee_pay').select('*').eq('employee_id',MY_EMPLOYEE_ID).maybeSingle(),
+      sb.from('work_hours').select('*').eq('employee_id',MY_EMPLOYEE_ID).gte('work_date',ym+'-01').lte('work_date',ym+'-31').order('work_date',{ascending:false}),
+      sb.from('employee_monthly_pay').select('*').eq('employee_id',MY_EMPLOYEE_ID).eq('pay_month',monthStart()).maybeSingle()
+    ]);
+    const emp=empR.data; const pay=payR.data||{}; const prof=parseProfile(pay); const hours=hR.data||[]; const mon=mR.data;
+    const wh=hours.reduce((s,r)=>s+(+r.hours||0),0);
+    const expH=prof.agreement.hours_day*prof.agreement.days_week*4.33;
+    let h='<div class="card"><h3>Μισθός & Ωράριο — '+esc(emp?.full_name||'')+'</h3><p style="color:var(--mut);font-size:13px;margin-top:-4px">Βλέπετε τις ώρες σας · η μισθοδοσία συμπληρώνεται από το HR.</p></div>';
+    h+='<div class="card"><h3>Ώρες '+ym+'</h3><div class="bigtotal"><span class="lbl">Σύνολο ωρών</span><span class="total">'+wh.toFixed(1)+' ω</span></div><p style="font-size:13px;color:var(--mut)">Στόχος συμφωνίας ~'+expH.toFixed(0)+' ω/μήνα ('+prof.agreement.hours_day+'ω × '+prof.agreement.days_week+' ημέρες)</p>';
+    if(hours.length){h+='<table style="margin-top:10px;width:100%;font-size:13px"><thead><tr><th>Ημ/νία</th><th style="text-align:right">Ώρες</th><th>Σημείωση</th></tr></thead><tbody>';hours.forEach(r=>{h+='<tr><td>'+r.work_date+'</td><td style="text-align:right"><b>'+r.hours+'</b></td><td style="color:var(--mut)">'+esc(r.note||'')+'</td></tr>';});h+='</tbody></table>';}else h+='<p style="color:var(--mut);margin-top:8px">Δεν υπάρχουν καταχωρημένες ώρες ακόμα.</p>';
+    h+='</div>';
+    h+='<div class="card"><h3>Σύμβαση (επίσημη)</h3><p>'+prof.contract.hours_day+' ώρες/ημέρα · '+prof.contract.days_week+' ημέρες/εβδομάδα · ρεπό '+esc(prof.contract.day_off)+'</p><p>Μικτός μισθός: <b>'+eur(prof.contract.gross)+'</b>'+(prof.contract.ensimo?' + ένσημο':'')+'</p></div>';
+    h+='<div class="card"><h3>Πραγματική συμφωνία</h3><p>'+prof.agreement.hours_day+'ω × '+prof.agreement.days_week+' ημέρες · στόχος <b>'+eur(prof.agreement.target_monthly)+'</b>/μήνα</p><p style="font-size:12px;color:var(--mut)">Τράπεζα: επίσημος μισθός + αναλογίες · Υπόλοιπο: χέρι</p></div>';
+    if(mon){
+      const c=calcView(prof,mon,wh);
+      h+='<div class="card"><h3>Ανάλυση μισθού — '+ym+'</h3><div style="display:grid;gap:8px;font-size:14px"><div>Τράπεζα (μικτά): <b style="color:#7dd3fc">'+eur(c.bank)+'</b></div><div style="padding-left:12px;font-size:13px;color:var(--mut)">Βασικός '+eur(mon.bank_base)+' · Πάσχα '+eur(mon.bank_easter)+' · Άδεια '+eur(mon.bank_vacation)+' · Άλλα '+eur(mon.bank_other)+'</div><div style="color:#fca5a5">Ασφαλιστικές κρατήσεις: −'+eur(c.insE)+'</div><div style="color:#86efac">Καθαρά τράπεζα: <b>'+eur(c.net)+'</b></div><div>Χέρι: <b>'+eur(c.cash)+'</b></div>';
+      if(c.extrasList.length) h+='<div>Έξτρα: '+c.extrasList.map(x=>esc(x.label)+' '+eur(x.amount)).join(' · ')+'</div>';
+      h+='<div style="border-top:1px solid var(--bdr);padding-top:8px;font-weight:700">Σύνολο: '+eur(c.total)+'</div></div></div>';
+    }else h+='<div class="card"><p style="color:var(--mut);margin:0">Η μισθοδοσία του μήνα δεν έχει συμπληρωθεί ακόμα από το HR.</p></div>';
+    box.innerHTML=h;
+  };
+})();
+</script>
+
+<!-- ========== HR / ΠΡΟΣΩΠΙΚΟ & ΩΡΑΡΙΟ + ΚΕΡΔΗ MODULE (Claude) ========== -->
+<script>
+(function(){
+  const HR_URL = "https://stbmppnyngfkbvgoajuf.supabase.co";
+  const HR_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InN0Ym1wcG55bmdma2J2Z29hanVmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE1MjAxNDcsImV4cCI6MjA5NzA5NjE0N30.nbJkIpjm9XiZUvBPWe3fv7iHqFEp-lKu5VGEN8cn0nI";
+  const STORES = ["Μύκονος","Ρόδος","Σαντορίνη","Online","Κεντρική Αποθήκη"];
+  const eur = n => (Number(n)||0).toLocaleString("el-GR",{style:"currency",currency:"EUR"});
+  const esc = s => String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  let sb, ROLE, isAdmin, isHR, EMP=[], HOURS=[], PAY={};
+  const num = id => +document.getElementById(id).value || 0;
+  function monthStart(d){ const x=d?new Date(d):new Date(); return x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-01"; }
+  function defaultProfile(){ return { contract:{hours_day:8,days_week:6,day_off:"Δευτέρα",gross:800,ensimo:true}, agreement:{hours_day:10,days_week:7,target_monthly:2000}, insurance:{employee_pct:16.12,employer_pct:22.29} }; }
+  function parseProfile(p){ const b=defaultProfile(), raw=(p&&p.payroll_profile)||{}; return { contract:Object.assign({},b.contract,raw.contract||{}), agreement:Object.assign({},b.agreement,raw.agreement||{}), insurance:Object.assign({},b.insurance,raw.insurance||{}) }; }
+  function calcPayroll(prof,m,workHours){
+    const bank=(+m.bank_base||0)+(+m.bank_easter||0)+(+m.bank_vacation||0)+(+m.bank_other||0);
+    const target=+prof.agreement.target_monthly||0;
+    const insE=m.insurance_employee!=null&&m.insurance_employee!==""?+m.insurance_employee:bank*((+prof.insurance.employee_pct||0)/100);
+    const insR=m.insurance_employer!=null&&m.insurance_employer!==""?+m.insurance_employer:bank*((+prof.insurance.employer_pct||0)/100);
+    const cash=m.cash_supplement!=null&&m.cash_supplement!==""?+m.cash_supplement:Math.max(0,target-bank);
+    const extrasList=m.extras||[];
+    const extrasSum=extrasList.reduce((s,x)=>s+(+x.amount||0),0);
+    return {bank,target,cash,insE,insR,net:bank-insE,total:cash+bank+extrasSum,workHours,extrasList,extrasSum};
+  }
+  function hoursForMonth(empId,ym){ return HOURS.filter(r=>r.employee_id===empId&&r.work_date.slice(0,7)===ym).reduce((s,r)=>s+(+r.hours||0),0); }
+
+  function waitAdmin(){
+    const w=document.querySelector('#admin > .wrap');
+    if(!w) return setTimeout(waitAdmin,300);
+    initHR(w);
+  }
+  async function initHR(wrap){
+    sb=window.supabase.createClient(HR_URL,HR_KEY);
+    const sess=(await sb.auth.getSession()).data.session;
+    if(!sess) return setTimeout(()=>initHR(wrap),800);
+    const prof=(await sb.from('profiles').select('role').eq('id',sess.user.id).single()).data;
+    ROLE=prof?prof.role:null;
+    if(ROLE!=='admin'&&ROLE!=='hr') return;
+    isAdmin=ROLE==='admin'; isHR=true;
+    if(document.getElementById('adminTopNav')){
+      if(window.__ensureAdminTopNav) window.__ensureAdminTopNav();
+      if(window.__bindAdminNavAll) window.__bindAdminNavAll();
+      if(isAdmin) addProfitCard(wrap);
+      return;
+    }
+    buildUI(wrap);
+    if(isAdmin) addProfitCard(wrap);
+  }
+  function buildUI(wrap){
+    const nav=document.createElement('div');nav.className='tabs';nav.id='adminTopNav';nav.style.marginBottom='18px';
+    nav.innerHTML='<button class="pbtn active" id="navDash">📊 Πίνακας Εσόδων</button><button class="pbtn" id="navHR">👥 HR — Μισθοδοσία</button>'+(isAdmin?'<button class="pbtn" id="navSettings">⚙️ Settings</button>':'');
+    wrap.insertBefore(nav,wrap.firstChild);
+    const dg=document.createElement('div');dg.id='dashGroup';
+    const MODULE_IDS=new Set(['settingsModule','sellersAdminModule']);
+    [...wrap.children].filter(c=>c!==nav&&!MODULE_IDS.has(c.id)).forEach(c=>dg.appendChild(c));
+    wrap.appendChild(dg);
+    const mod=document.createElement('div');mod.id='hrModule';mod.className='hidden';
+    mod.innerHTML=(isAdmin?'<div class="card"><h2>Προσθήκη Υπαλλήλου</h2><div class="grid2" style="grid-template-columns:2fr 1fr 1fr auto;gap:12px;align-items:end"><div><label>Ονοματεπώνυμο</label><input id="hr_name"></div><div><label>Κατάστημα</label><select id="hr_store">'+STORES.map(s=>'<option>'+s+'</option>').join('')+'</select></div><div><label>Τύπος</label><select id="hr_ptype"><option value="monthly">Μηνιαίο</option></select></div><div><button class="btn" id="hr_add" style="width:auto">+ Προσθήκη</button></div></div></div>':'<div class="card"><p style="color:var(--mut);margin:0">Ως HR: καταχωρείτε <b>ώρες</b> · συμπληρώνετε <b>μισθοδοσία</b> (σύμβαση, τράπεζα, εισφορές, χέρι).</p></div>')
+      +'<div class="card"><h2>Προσωπικό</h2><div id="hr_empTable"></div></div>'
+      +'<div class="card"><h2>Καταχώρηση Ωρών</h2><div class="grid2" style="grid-template-columns:2fr 1fr 1fr auto;gap:12px;align-items:end"><div><label>Υπάλληλος</label><select id="hr_whEmp"></select></div><div><label>Ημερομηνία</label><input id="hr_whDate" type="date"></div><div><label>Ώρες</label><input id="hr_whHours" type="number" step="0.25" min="0"></div><div><button class="btn" id="hr_whAdd" style="width:auto">+ Ώρες</button></div></div><div style="margin-top:10px"><label>Σημείωση</label><input id="hr_whNote"></div></div>'
+      +'<div class="card"><h2>Ωράριο — Καταχωρημένες Ώρες</h2><div style="margin-bottom:12px;display:flex;gap:10px;flex-wrap:wrap"><select id="hr_whFilter" style="max-width:260px"></select><input id="hr_whMonth" type="month" style="max-width:180px"></div><div id="hr_whTable"></div></div>'
+      +(isAdmin?'<div class="card"><h2>Σύνοψη μισθοδοσίας</h2><div id="hr_payTable"></div></div>':'');
+    dg.after(mod);
+    if(window.__bindAdminNavAll) window.__bindAdminNavAll();
+    else setTimeout(function retry(){ if(window.__bindAdminNavAll) window.__bindAdminNavAll(); else setTimeout(retry,150); },150);
+    document.getElementById('hr_whFilter').onchange=renderHours;
+    document.getElementById('hr_whMonth').onchange=renderHours;
+    document.getElementById('hr_whDate').value=new Date().toISOString().slice(0,10);
+    document.getElementById('hr_whMonth').value=new Date().toISOString().slice(0,7);
+    if(isAdmin) document.getElementById('hr_add').onclick=addEmp;
+    document.getElementById('hr_whAdd').onclick=addHour;
+  }
+  function addProfitCard(wrap){
+    const dg=document.getElementById('dashGroup'); if(!dg||document.getElementById('profitCard'))return;
+    const c=document.createElement('div');c.className='card';c.id='profitCard';
+    c.innerHTML='<h2>💰 Κέρδη ανά Κατάστημα (Έσοδα − Μισθοδοσία)</h2><div id="profitCardBody">Φόρτωση…</div>';
+    dg.appendChild(c);loadProfitCard();
+  }
+  async function loadProfitCard(){
+    const {data,error}=await sb.from('v_store_profit').select('*');
+    const b=document.getElementById('profitCardBody'); if(!b)return;
+    if(error){b.innerHTML='<div class="msg err" style="display:block">'+esc(error.message)+'</div>';return;}
+    const rows=data||[];let tR=0,tC=0,tP=0;rows.forEach(r=>{tR+=+r.revenue;tC+=+r.labor_cost;tP+=+r.profit;});
+    let h='<table><thead><tr><th>Κατάστημα</th><th style="text-align:right">Έσοδα</th><th style="text-align:right">Ώρες</th><th style="text-align:right">Κόστος Εργασίας</th><th style="text-align:right">Καθαρό Κέρδος</th></tr></thead><tbody>';
+    if(!rows.length)h+='<tr><td colspan="5" style="text-align:center;color:var(--mut);padding:20px">Δεν υπάρχουν δεδομένα.</td></tr>';
+    rows.forEach(r=>{const p=+r.profit;h+='<tr><td><b>'+esc(r.store)+'</b></td><td style="text-align:right">'+eur(r.revenue)+'</td><td style="text-align:right">'+(r.total_hours||0)+'</td><td style="text-align:right;color:#fca5a5">'+eur(r.labor_cost)+'</td><td style="text-align:right;color:'+(p>=0?'#86efac':'#fca5a5')+';font-weight:700">'+eur(p)+'</td></tr>';});
+    h+='</tbody><tfoot><tr><th>ΣΥΝΟΛΟ</th><th style="text-align:right">'+eur(tR)+'</th><th></th><th style="text-align:right;color:#fca5a5">'+eur(tC)+'</th><th style="text-align:right;color:'+(tP>=0?'#86efac':'#fca5a5')+'">'+eur(tP)+'</th></tr></tfoot></table>';
+    b.innerHTML=h;
+  }
+  const nameOf=id=>{const e=EMP.find(x=>x.id===id);return e?e.full_name:'?';};
+  async function loadEmp(){
+    EMP=(await sb.from('employees').select('*').order('full_name')).data||[];
+    const r=await sb.from('employee_pay').select('*'); PAY={}; (r.data||[]).forEach(p=>PAY[p.employee_id]=p);
+    let h='<table><thead><tr><th>Όνομα</th><th>Κατάστημα</th><th>Σύμβαση</th><th>Στόχος/μήνα</th><th>Τράπεζα</th><th>Χέρι</th><th></th></tr></thead><tbody>';
+    if(!EMP.length)h+='<tr><td colspan="7" style="text-align:center;color:var(--mut);padding:20px">Δεν υπάρχουν υπάλληλοι.</td></tr>';
+    EMP.forEach(e=>{const p=PAY[e.id]||{};const pr=parseProfile(p);
+      h+='<tr><td><b>'+esc(e.full_name)+'</b>'+(e.active?'':' <span style="color:var(--mut)">(ανενεργ.)</span>')+'</td><td>'+esc(e.store||'-')+'</td><td>'+pr.contract.hours_day+'ω×'+pr.contract.days_week+'ημ · '+eur(pr.contract.gross)+(pr.contract.ensimo?' +ενσήμ.':'')+'</td><td style="text-align:right">'+eur(pr.agreement.target_monthly)+'</td><td style="text-align:right;color:#7dd3fc">'+eur(p.pay_bank||0)+'</td><td style="text-align:right;color:#86efac">'+eur(p.pay_cash||0)+'</td><td style="text-align:right;white-space:nowrap"><button class="btn" style="width:auto;padding:6px 10px" onclick="__hrEditPayroll(\''+e.id+'\')">Μισθοδοσία</button>'+(isAdmin?' <button class="del" onclick="__hrDelEmp(\''+e.id+'\')">✕</button>':'')+'</td></tr>';});
+    h+='</tbody></table>';document.getElementById('hr_empTable').innerHTML=h;
+    document.getElementById('hr_whEmp').innerHTML='<option value="">— επιλέξτε —</option>'+EMP.filter(e=>e.active).map(e=>'<option value="'+e.id+'">'+esc(e.full_name)+' ('+esc(e.store||'')+')</option>').join('');
+    document.getElementById('hr_whFilter').innerHTML='<option value="">Όλοι οι υπάλληλοι</option>'+EMP.map(e=>'<option value="'+e.id+'">'+esc(e.full_name)+'</option>').join('');
+    if(isAdmin)renderPay(PAY);
+  }
+  function renderPay(pay){let tb=0,tc=0,h='<table><thead><tr><th>Υπάλληλος</th><th style="text-align:right">Τράπεζα</th><th style="text-align:right">Χέρι</th><th style="text-align:right">Σύνολο</th></tr></thead><tbody>';EMP.forEach(e=>{const p=pay[e.id]||{};const b=+p.pay_bank||0,c=+p.pay_cash||0;tb+=b;tc+=c;h+='<tr><td>'+esc(e.full_name)+'</td><td style="text-align:right;color:#7dd3fc">'+eur(b)+'</td><td style="text-align:right;color:#86efac">'+eur(c)+'</td><td style="text-align:right"><b>'+eur(b+c)+'</b></td></tr>';});h+='</tbody><tfoot><tr><th>Σύνολο</th><th style="text-align:right">'+eur(tb)+'</th><th style="text-align:right">'+eur(tc)+'</th><th style="text-align:right">'+eur(tb+tc)+'</th></tr></tfoot></table>';document.getElementById('hr_payTable').innerHTML=h;}
+  async function loadHours(){HOURS=(await sb.from('work_hours').select('*').order('work_date',{ascending:false})).data||[];renderHours();}
+  function renderHours(){const f=document.getElementById('hr_whFilter').value;const ym=document.getElementById('hr_whMonth').value;const rows=HOURS.filter(r=>(!f||r.employee_id===f)&&(!ym||r.work_date.slice(0,7)===ym));let tot=0,h='<table><thead><tr><th>Ημ/νία</th><th>Υπάλληλος</th><th>Κατάστημα</th><th style="text-align:right">Ώρες</th><th>Σημείωση</th><th></th></tr></thead><tbody>';if(!rows.length)h+='<tr><td colspan="6" style="text-align:center;color:var(--mut);padding:20px">Καμία καταχώρηση.</td></tr>';rows.forEach(r=>{tot+=+r.hours||0;h+='<tr><td>'+r.work_date+'</td><td>'+esc(nameOf(r.employee_id))+'</td><td>'+esc(r.store||'')+'</td><td style="text-align:right"><b>'+r.hours+'</b></td><td style="color:var(--mut)">'+esc(r.note||'')+'</td><td style="text-align:right"><button class="del" onclick="__hrDelHour(\''+r.id+'\')">✕</button></td></tr>';});h+='</tbody><tfoot><tr><th colspan="3">Σύνολο</th><th style="text-align:right">'+tot.toFixed(1)+'</th><th colspan="2"></th></tr></tfoot></table>';document.getElementById('hr_whTable').innerHTML=h;}
+  async function addEmp(){const n=document.getElementById('hr_name').value.trim();if(!n)return alert('Συμπληρώστε όνομα');const store=document.getElementById('hr_store').value;const {data,error}=await sb.from('employees').insert({full_name:n,store,pay_type:'monthly'}).select().single();if(error)return alert(error.message);await sb.from('employee_pay').insert({employee_id:data.id,payroll_profile:defaultProfile(),pay_bank:800,pay_cash:1200,base_rate:800});document.getElementById('hr_name').value='';loadAll();}
+  async function addHour(){const id=document.getElementById('hr_whEmp').value;if(!id)return alert('Επιλέξτε υπάλληλο');const d=document.getElementById('hr_whDate').value||new Date().toISOString().slice(0,10);const hh=+document.getElementById('hr_whHours').value;if(!hh||hh<=0)return alert('Δώστε ώρες');const e=EMP.find(x=>x.id===id);const {error}=await sb.from('work_hours').insert({employee_id:id,store:e?e.store:null,work_date:d,hours:hh,note:document.getElementById('hr_whNote').value});if(error)return alert(error.message);document.getElementById('hr_whHours').value='';document.getElementById('hr_whNote').value='';loadHours();if(isAdmin)loadProfitCard();}
+  function hrModalClose(){const m=document.getElementById('hrModal');if(m)m.remove();}
+  function hrRefreshPreview(){
+    const pr={contract:{hours_day:num('hp_cHd'),days_week:num('hp_cDw'),day_off:document.getElementById('hp_cOff').value,gross:num('hp_cGr'),ensimo:document.getElementById('hp_cEn').checked},agreement:{hours_day:num('hp_aHd'),days_week:num('hp_aDw'),target_monthly:num('hp_aTg')},insurance:{employee_pct:num('hp_iEp'),employer_pct:num('hp_iRp')}};
+    const m={bank_base:num('hp_bB'),bank_easter:num('hp_bEa'),bank_vacation:num('hp_bVa'),bank_other:num('hp_bOt'),cash_supplement:document.getElementById('hp_cash').value,insurance_employee:document.getElementById('hp_iE').value,insurance_employer:document.getElementById('hp_iR').value,extras:[]};
+    document.querySelectorAll('#hp_extras .ex-row').forEach(row=>{const l=row.querySelector('.ex-l').value.trim(),a=+row.querySelector('.ex-a').value||0;if(l||a)m.extras.push({label:l,amount:a});});
+    const wh=hoursForMonth(window.__hrPayEmpId,document.getElementById('hp_month').value);
+    const c=calcPayroll(pr,m,wh);
+    document.getElementById('hp_preview').innerHTML='<div style="display:grid;gap:6px;font-size:13px"><div>Ώρες μήνα (καταχωρημένες): <b>'+wh.toFixed(1)+'</b> · Στόχος συμφωνίας: <b>'+(pr.agreement.hours_day*pr.agreement.days_week*4.33).toFixed(0)+'ω/μήνα</b></div><div>Τράπεζα: '+eur(c.bank)+' (βάση '+eur(m.bank_base)+' + Πάσχα '+eur(m.bank_easter)+' + άδεια '+eur(m.bank_vacation)+' + άλλα '+eur(m.bank_other)+')</div><div style="color:#fca5a5">Κρατήσεις εργαζομένου: −'+eur(c.insE)+' · Εργοδότη: '+eur(c.insR)+'</div><div style="color:#86efac">Καθαρά τράπεζα: '+eur(c.net)+'</div><div>Χέρι (συμπλήρωση): '+eur(c.cash)+'</div>'+(c.extrasList.length?'<div>Έξτρα: '+c.extrasList.map(x=>esc(x.label)+' '+eur(x.amount)).join(', ')+'</div>':'')+'<div style="border-top:1px solid var(--bdr);padding-top:6px;font-weight:700">Σύνολο μήνα: '+eur(c.total)+' / στόχος '+eur(c.target)+'</div></div>';
+  }
+  window.__hrEditPayroll=function(id){
+    window.__hrPayEmpId=id;
+    const e=EMP.find(x=>x.id===id); if(!e) return;
+    const ym=new Date().toISOString().slice(0,7);
+    Promise.all([sb.from('employee_pay').select('*').eq('employee_id',id).maybeSingle(),sb.from('employee_monthly_pay').select('*').eq('employee_id',id).eq('pay_month',monthStart()).maybeSingle()]).then(async ([pr,mo])=>{
+      const p=pr.data||{}; const prof=parseProfile(p); const m=mo.data||{}; const ex=(m.extras||[]);
+      hrModalClose();
+      const bg=document.createElement('div'); bg.id='hrModal'; bg.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:flex-start;justify-content:center;z-index:999;overflow:auto;padding:16px';
+      bg.innerHTML='<div class="card" style="width:720px;max-width:96vw;margin:12px 0"><div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px"><h2 style="margin:0">Μισθοδοσία — '+esc(e.full_name)+'</h2><button class="del" style="width:auto;padding:6px 12px" onclick="hrModalClose()">✕</button></div>'
+        +'<div style="margin-bottom:12px;display:flex;gap:10px;flex-wrap:wrap;align-items:end"><div><div class="lbl">Μήνας</div><input id="hp_month" type="month" value="'+ym+'"></div><button class="btn" style="width:auto;padding:8px 12px" type="button" onclick="__hrLoadMonthPay(\''+id+'\')">Φόρτωση μήνα</button><button class="small" type="button" onclick="__hrMykonosTpl()">Πρότυπο Μύκονος</button></div>'
+        +'<h3 style="margin:14px 0 8px;font-size:14px;color:var(--mut)">Επίσημη σύμβαση (φαίνεται στον εργαζόμενο)</h3><div class="grid2" style="gap:10px"><div><div class="lbl">Ώρες/ημέρα</div><input id="hp_cHd" type="number" step="0.5" value="'+prof.contract.hours_day+'"></div><div><div class="lbl">Ημέρες/εβδομάδα</div><input id="hp_cDw" type="number" value="'+prof.contract.days_week+'"></div><div><div class="lbl">Ρεπό</div><input id="hp_cOff" value="'+esc(prof.contract.day_off)+'"></div><div><div class="lbl">Μικτός μισθός (€)</div><input id="hp_cGr" type="number" step="0.01" value="'+prof.contract.gross+'"></div><div><label style="display:flex;align-items:center;gap:8px;margin-top:22px"><input id="hp_cEn" type="checkbox"'+(prof.contract.ensimo?' checked':'')+'> Με ένσημο</label></div></div>'
+        +'<h3 style="margin:14px 0 8px;font-size:14px;color:var(--mut)">Πραγματική συμφωνία</h3><div class="grid2" style="gap:10px"><div><div class="lbl">Ώρες/ημέρα</div><input id="hp_aHd" type="number" step="0.5" value="'+prof.agreement.hours_day+'"></div><div><div class="lbl">Ημέρες/εβδομάδα</div><input id="hp_aDw" type="number" value="'+prof.agreement.days_week+'"></div><div><div class="lbl">Στόχος μήνα (€)</div><input id="hp_aTg" type="number" step="0.01" value="'+prof.agreement.target_monthly+'"></div></div>'
+        +'<h3 style="margin:14px 0 8px;font-size:14px;color:var(--mut)">Τράπεζα — μήνας '+ym+'</h3><div class="grid2" style="gap:10px"><div><div class="lbl">Βασικός (€)</div><input id="hp_bB" type="number" step="0.01" value="'+(m.bank_base!=null?m.bank_base:p.base_rate||800)+'"></div><div><div class="lbl">Αναλ. δώρο Πάσχα (€)</div><input id="hp_bEa" type="number" step="0.01" value="'+(m.bank_easter||0)+'"></div><div><div class="lbl">Αναλ. επίδομα άδειας (€)</div><input id="hp_bVa" type="number" step="0.01" value="'+(m.bank_vacation||0)+'"></div><div><div class="lbl">Άλλα τράπεζα (€)</div><input id="hp_bOt" type="number" step="0.01" value="'+(m.bank_other||0)+'"></div></div>'
+        +'<h3 style="margin:14px 0 8px;font-size:14px;color:var(--mut)">Ασφαλιστικές εισφορές & χέρι</h3><div class="grid2" style="gap:10px"><div><div class="lbl">% εργαζομένου</div><input id="hp_iEp" type="number" step="0.01" value="'+prof.insurance.employee_pct+'"></div><div><div class="lbl">% εργοδότη</div><input id="hp_iRp" type="number" step="0.01" value="'+prof.insurance.employer_pct+'"></div><div><div class="lbl">Κράτηση εργαζ. (€, κενό=αυτόματα)</div><input id="hp_iE" type="number" step="0.01" value="'+(m.insurance_employee!=null?m.insurance_employee:'')+'" placeholder="αυτόματα"></div><div><div class="lbl">Εισφορά εργοδότη (€)</div><input id="hp_iR" type="number" step="0.01" value="'+(m.insurance_employer!=null?m.insurance_employer:'')+'" placeholder="αυτόματα"></div><div><div class="lbl">Χέρι / μαύρα (€, κενό=αυτόματα)</div><input id="hp_cash" type="number" step="0.01" value="'+(m.cash_supplement!=null?m.cash_supplement:'')+'" placeholder="αυτόματα"></div></div>'
+        +'<h3 style="margin:14px 0 8px;font-size:14px;color:var(--mut)">Έξτρα ανά μήνα</h3><div id="hp_extras"></div><button class="small" type="button" onclick="__hrAddExtra()">+ Έξτρα</button>'
+        +'<div style="margin-top:10px"><div class="lbl">Σημείωση HR</div><input id="hp_notes" value="'+esc(m.notes||p.agreement_note||'')+'"></div>'
+        +'<div class="card" style="margin-top:14px;background:rgba(255,255,255,.03)"><h3 style="margin:0 0 8px;font-size:14px">Ανάλυση μισθού</h3><div id="hp_preview"></div></div>'
+        +'<div class="row" style="justify-content:flex-end;gap:10px;margin-top:16px"><button class="del" type="button" onclick="hrModalClose()">Άκυρο</button><button class="btn" style="width:auto" type="button" onclick="__hrSavePayroll(\''+id+'\')">Αποθήκευση</button></div></div>';
+      document.body.appendChild(bg);
+      window.hrModalClose=hrModalClose; window.hrRefreshPreview=hrRefreshPreview;
+      const exBox=document.getElementById('hp_extras');
+      (ex.length?ex:[{label:'',amount:0}]).forEach(x=>{exBox.insertAdjacentHTML('beforeend','<div class="ex-row row" style="gap:8px;margin-bottom:6px"><input class="ex-l" placeholder="π.χ. bonus" value="'+esc(x.label||'')+'" style="flex:2"><input class="ex-a" type="number" step="0.01" value="'+(x.amount||0)+'" style="flex:1"><button class="del" type="button" onclick="this.parentElement.remove();hrRefreshPreview()">✕</button></div>');});
+      bg.querySelectorAll('input').forEach(inp=>inp.oninput=hrRefreshPreview);
+      document.getElementById('hp_month').onchange=function(){__hrLoadMonthPay(id);};
+      hrRefreshPreview();
+    });
+  };
+  window.__hrAddExtra=function(){document.getElementById('hp_extras').insertAdjacentHTML('beforeend','<div class="ex-row row" style="gap:8px;margin-bottom:6px"><input class="ex-l" placeholder="περιγραφή" style="flex:2"><input class="ex-a" type="number" step="0.01" value="0" style="flex:1"><button class="del" type="button" onclick="this.parentElement.remove();hrRefreshPreview()">✕</button></div>');};
+  window.__hrMykonosTpl=function(){document.getElementById('hp_cHd').value=8;document.getElementById('hp_cDw').value=6;document.getElementById('hp_cOff').value='Δευτέρα';document.getElementById('hp_cGr').value=800;document.getElementById('hp_cEn').checked=true;document.getElementById('hp_aHd').value=10;document.getElementById('hp_aDw').value=7;document.getElementById('hp_aTg').value=2000;document.getElementById('hp_bB').value=800;document.getElementById('hp_bEa').value=Math.round(800/12*100)/100;document.getElementById('hp_bVa').value=Math.round(800/12*100)/100;document.getElementById('hp_bOt').value=0;document.getElementById('hp_cash').value='';document.getElementById('hp_iEp').value=16.12;document.getElementById('hp_iRp').value=22.29;hrRefreshPreview();};
+  window.__hrLoadMonthPay=async function(id){
+    const ym=document.getElementById('hp_month').value; if(!ym) return;
+    const {data:m}=await sb.from('employee_monthly_pay').select('*').eq('employee_id',id).eq('pay_month',monthStart(ym+'-01')).maybeSingle();
+    if(!m){document.getElementById('hp_bEa').value=0;document.getElementById('hp_bVa').value=0;document.getElementById('hp_bOt').value=0;document.getElementById('hp_cash').value='';document.getElementById('hp_iE').value='';document.getElementById('hp_iR').value='';document.getElementById('hp_notes').value='';document.getElementById('hp_extras').innerHTML='';__hrAddExtra();hrRefreshPreview();return;}
+    document.getElementById('hp_bB').value=m.bank_base||0;document.getElementById('hp_bEa').value=m.bank_easter||0;document.getElementById('hp_bVa').value=m.bank_vacation||0;document.getElementById('hp_bOt').value=m.bank_other||0;document.getElementById('hp_cash').value=m.cash_supplement!=null?m.cash_supplement:'';document.getElementById('hp_iE').value=m.insurance_employee!=null?m.insurance_employee:'';document.getElementById('hp_iR').value=m.insurance_employer!=null?m.insurance_employer:'';document.getElementById('hp_notes').value=m.notes||'';
+    const exBox=document.getElementById('hp_extras'); exBox.innerHTML=''; (m.extras||[]).forEach(x=>{exBox.insertAdjacentHTML('beforeend','<div class="ex-row row" style="gap:8px;margin-bottom:6px"><input class="ex-l" value="'+esc(x.label||'')+'" style="flex:2"><input class="ex-a" type="number" step="0.01" value="'+(x.amount||0)+'" style="flex:1"><button class="del" type="button" onclick="this.parentElement.remove();hrRefreshPreview()">✕</button></div>');}); if(!exBox.children.length)__hrAddExtra(); hrRefreshPreview();
+  };
+  window.__hrSavePayroll=async function(id){
+    const prof={contract:{hours_day:num('hp_cHd'),days_week:num('hp_cDw'),day_off:document.getElementById('hp_cOff').value,gross:num('hp_cGr'),ensimo:document.getElementById('hp_cEn').checked},agreement:{hours_day:num('hp_aHd'),days_week:num('hp_aDw'),target_monthly:num('hp_aTg')},insurance:{employee_pct:num('hp_iEp'),employer_pct:num('hp_iRp')}};
+    const extras=[]; document.querySelectorAll('#hp_extras .ex-row').forEach(row=>{const l=row.querySelector('.ex-l').value.trim(),a=+row.querySelector('.ex-a').value||0;if(l||a)extras.push({label:l,amount:a});});
+    const m={bank_base:num('hp_bB'),bank_easter:num('hp_bEa'),bank_vacation:num('hp_bVa'),bank_other:num('hp_bOt'),cash_supplement:document.getElementById('hp_cash').value===''?null:+document.getElementById('hp_cash').value,insurance_employee:document.getElementById('hp_iE').value===''?null:+document.getElementById('hp_iE').value,insurance_employer:document.getElementById('hp_iR').value===''?null:+document.getElementById('hp_iR').value,extras,notes:document.getElementById('hp_notes').value};
+    const c=calcPayroll(prof,m,hoursForMonth(id,document.getElementById('hp_month').value));
+    const cash=m.cash_supplement!=null?m.cash_supplement:c.cash;
+    const bank=c.bank;
+    const {error:e1}=await sb.from('employee_pay').upsert({employee_id:id,base_rate:prof.contract.gross,pay_bank:bank,pay_cash:cash,agreement_note:m.notes,payroll_profile:prof,updated_at:new Date().toISOString()});
+    if(e1) return alert(e1.message);
+    const ym=document.getElementById('hp_month').value;
+    const {error:e2}=await sb.from('employee_monthly_pay').upsert({employee_id:id,pay_month:monthStart(ym+'-01'),bank_base:m.bank_base,bank_easter:m.bank_easter,bank_vacation:m.bank_vacation,bank_other:m.bank_other,cash_supplement:cash,insurance_employee:c.insE,insurance_employer:c.insR,extras,notes:m.notes,updated_at:new Date().toISOString()},{onConflict:'employee_id,pay_month'});
+    if(e2) return alert(e2.message);
+    hrModalClose(); loadEmp();
+  };
+  window.__hrDelEmp=async function(id){if(!confirm('Να γίνει ανενεργός;'))return;await sb.from('employees').update({active:false}).eq('id',id);loadEmp();};
+  window.__hrDelHour=async function(id){if(!confirm('Διαγραφή ωρών;'))return;await sb.from('work_hours').delete().eq('id',id);loadHours();if(isAdmin)loadProfitCard();};
+  async function loadAll(){await loadEmp();await loadHours();}
+  window.__hrLoadAll=loadAll;
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',waitAdmin); else waitAdmin();
+})();
+</script>
+<!-- ========== ΤΕΛΟΣ MODULE ========== -->
+
+<!-- ========== ADMIN SETTINGS MODULE ========== -->
+<script>
+(function(){
+  const ROLES=[{v:'admin',l:'Admin'},{v:'hr',l:'HR'},{v:'staff',l:'Staff (κατάστημα)'},{v:'warehouse',l:'Αποθήκη'},{v:'seller',l:'Πωλητής'}];
+  const STORES=['Μύκονος','Ρόδος','Σαντορίνη','Online','Κεντρική Αποθήκη'];
+  const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  let EMP_OPTS=[], USERS=[];
+  async function adminApi(action,payload){
+    const sess=await sb.auth.getSession();
+    if(!sess.data.session) throw new Error('Η σύνδεση έληξε — κάνε logout/login και ξανά-δοκίμασε');
+    const res=await sb.functions.invoke('admin-settings',{body:Object.assign({action},payload||{})});
+    let data=res.data;
+    if(res.error){
+      try{
+        if(res.error.context&&typeof res.error.context.json==='function') data=await res.error.context.json();
+        else if(res.response) data=await res.response.clone().json().catch(()=>null);
+      }catch(_e){}
+      if(data&&data.error) throw new Error(data.error);
+      throw new Error(res.error.message||'API error');
+    }
+    if(data&&!data.ok) throw new Error(data.error||'Σφάλμα');
+    return data;
+  }
+  function dockAdminModule(wrap,el){
+    if(!wrap||!el) return;
+    if(el.parentElement&&el.parentElement.id==='dashGroup') wrap.appendChild(el);
+  }
+  function waitSettings(){
+    const w=document.querySelector('#admin > .wrap');
+    if(!w) return setTimeout(waitSettings,300);
+    ensureSettingsDom(w);
+    dockAdminModule(w,document.getElementById('settingsModule'));
+    if(document.getElementById('adminTopNav')) bindAdminNavAll();
+    if(document.getElementById('stApi')) loadApiPanel();
+  }
+  function ensureSettingsDom(wrap){
+    const old=document.getElementById('settingsModule');
+    if(old&&(!document.getElementById('stApi')||!document.getElementById('stStores'))) old.remove();
+    if(document.getElementById('settingsModule')){ dockAdminModule(wrap,document.getElementById('settingsModule')); return; }
+    const mod=document.createElement('div'); mod.id='settingsModule'; mod.className='hidden';
+    mod.innerHTML='<div class="card"><h2>⚙️ Settings</h2>'
+      +'<div class="tabs" id="stTabs" style="margin-bottom:14px"><button class="pbtn" data-st="users">👤 Χρήστες</button><button class="pbtn active" data-st="api">🔌 API</button><button class="pbtn" data-st="stores">🏪 Καταστήματα</button><button class="pbtn" data-st="notify">📧 Ειδοποιήσεις</button></div>'
+      +'<div id="stUsers" class="hidden"></div><div id="stApi"></div><div id="stStores" class="hidden"></div><div id="stNotify" class="hidden"></div></div>';
+    wrap.appendChild(mod);
+    dockAdminModule(wrap,mod);
+    document.querySelectorAll('#stTabs .pbtn').forEach(b=>{ b.onclick=function(){
+      document.querySelectorAll('#stTabs .pbtn').forEach(x=>x.classList.remove('active')); b.classList.add('active');
+      const tabs=['users','api','stores','notify'];
+      tabs.forEach(t=>{ const el=document.getElementById('st'+t.charAt(0).toUpperCase()+t.slice(1)); if(el) el.classList.toggle('hidden', b.dataset.st!==t); });
+      if(b.dataset.st==='users') loadUsers();
+      if(b.dataset.st==='api') loadApiPanel();
+      if(b.dataset.st==='stores') loadStoresPanel();
+      if(b.dataset.st==='notify') loadNotifyPanel();
+    };});
+  }
+  function ensureAdminTopNav(){
+    const wrap=document.querySelector('#admin > .wrap'); if(!wrap) return;
+    let nav=document.getElementById('adminTopNav');
+    const needSettings=!document.getElementById('navSettings');
+    const needSellers=!document.getElementById('navSellers');
+    if(!nav){
+      nav=document.createElement('div'); nav.className='tabs'; nav.id='adminTopNav'; nav.style.marginBottom='18px';
+      nav.innerHTML='<button class="pbtn active" id="navDash">📊 Πίνακας Εσόδων</button><button class="pbtn" id="navHR">👥 HR — Μισθοδοσία</button><button class="pbtn" id="navSettings">⚙️ Settings</button><button class="pbtn" id="navSellers">📦 Πωλητές</button>';
+      wrap.insertBefore(nav,wrap.firstChild);
+      const dg=document.getElementById('dashGroup');
+      if(!dg){
+        const g=document.createElement('div'); g.id='dashGroup';
+        const MODULE_IDS=new Set(['settingsModule','sellersAdminModule']);
+        [...wrap.children].filter(c=>c!==nav&&!MODULE_IDS.has(c.id)).forEach(c=>g.appendChild(c));
+        wrap.appendChild(g);
+      }
+    }else{
+      if(needSettings){
+        const b=document.createElement('button'); b.className='pbtn'; b.id='navSettings'; b.textContent='⚙️ Settings';
+        nav.appendChild(b);
+      }
+      if(needSellers&&!document.getElementById('navSellers')){
+        const b=document.createElement('button'); b.className='pbtn'; b.id='navSellers'; b.textContent='📦 Πωλητές';
+        nav.appendChild(b);
+      }
+    }
+    if(window.__bindAdminNavAll) window.__bindAdminNavAll();
+  }
+  window.__ensureAdminTopNav=ensureAdminTopNav;
+  function showSettingsTab(tab){
+    const btn=document.querySelector('#stTabs .pbtn[data-st="'+tab+'"]');
+    if(btn) btn.click();
+    else if(tab==='users') loadUsers();
+    else if(tab==='stores') loadStoresPanel();
+    else if(tab==='notify') loadNotifyPanel();
+    else loadApiPanel();
+  }
+  async function initSettings(wrap){
+    ensureSettingsDom(wrap);
+    const {data:{session}}=await sb.auth.getSession();
+    if(!session) return false;
+    const {data:prof}=await sb.from('profiles').select('role').eq('id',session.user.id).single();
+    if(prof?.role!=='admin') return false;
+    bindAdminNavAll();
+    return true;
+  }
+  window.__openAdminSettings=async function(tab){
+    const w=document.querySelector('#admin > .wrap');
+    if(!w) return alert('Admin panel not ready — κάνε refresh');
+    ensureAdminTopNav();
+    const ok=await initSettings(w);
+    if(!ok){
+      const {data:{user}}=await sb.auth.getUser();
+      const {data:prof}=user?await sb.from('profiles').select('role').eq('id',user.id).single():{data:null};
+      return alert('Δεν έχεις πρόσβαση admin (ρόλος: '+(prof?.role||'άγνωστος')+'). Ζήτησε από admin να αλλάξει τον ρόλο σου σε profiles.');
+    }
+    document.querySelectorAll('#adminTopNav .pbtn').forEach(b=>b.classList.remove('active'));
+    const ns=document.getElementById('navSettings'); if(ns) ns.classList.add('active');
+    ['dashGroup','hrModule','sellersAdminModule'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.add('hidden');});
+    const st=document.getElementById('settingsModule');
+    dockAdminModule(w,st);
+    if(st){ st.classList.remove('hidden'); st.style.display='block'; st.scrollIntoView({behavior:'smooth',block:'start'}); }
+    const t=tab||'api';
+    showSettingsTab(t==='users'?'users':t==='stores'?'stores':t==='notify'?'notify':'api');
+  };
+  window.__ensureAdminSettings=function(){
+    const w=document.querySelector('#admin > .wrap');
+    if(w) ensureSettingsDom(w);
+  };
+  function bindAdminNavAll(){
+    const panels={navDash:'dashGroup',navHR:'hrModule',navSettings:'settingsModule',navSellers:'sellersAdminModule'};
+    Object.keys(panels).forEach(navId=>{
+      const btn=document.getElementById(navId); if(!btn) return;
+      btn.onclick=function(){
+        if(navId==='navSettings'&&window.__openAdminSettings){ window.__openAdminSettings(); return; }
+        document.querySelectorAll('#adminTopNav .pbtn').forEach(b=>b.classList.remove('active'));
+        this.classList.add('active');
+        Object.values(panels).forEach(id=>{const el=document.getElementById(id);if(el)el.classList.add('hidden');});
+        const show=document.getElementById(panels[navId]); if(show) show.classList.remove('hidden');
+        if(navId==='navHR'&&window.__hrLoadAll) window.__hrLoadAll();
+        if(navId==='navSettings') showSettingsTab('api');
+        if(navId==='navSellers'&&window.__loadAdminSellers) window.__loadAdminSellers();
+      };
+    });
+  }
+  window.__bindAdminNavAll=bindAdminNavAll;
+  async function loadEmpOpts(){
+    const {data}=await sb.from('employees').select('id,full_name,store').eq('active',true).order('full_name');
+    EMP_OPTS=data||[];
+  }
+  async function loadUsers(){
+    const box=document.getElementById('stUsers'); if(!box) return;
+    box.innerHTML='<div class="spin">Φόρτωση χρηστών...</div>';
+    await loadEmpOpts();
+    try{
+      const res=await adminApi('list_users');
+      USERS=res.users||[];
+      let h='<div class="card" style="background:rgba(255,255,255,.02);margin-bottom:14px"><h3 style="margin-top:0">Νέος λογαριασμός</h3><div class="grid2" style="gap:10px"><div><label>Email</label><input id="nu_email" type="email" placeholder="name@tameio.gr"></div><div><label>Κωδικός</label><input id="nu_pass" type="password" placeholder="min 6 χαρακτήρες"></div><div><label>Ρόλος</label><select id="nu_role">'+ROLES.map(r=>'<option value="'+r.v+'">'+r.l+'</option>').join('')+'</select></div><div><label>Κατάστημα</label><select id="nu_store"><option value="">—</option>'+STORES.map(s=>'<option>'+s+'</option>').join('')+'</select></div><div><label>Σύνδεση υπαλλήλου (προαιρετικό)</label><select id="nu_emp"><option value="">—</option>'+EMP_OPTS.map(e=>'<option value="'+e.id+'">'+esc(e.full_name)+' ('+esc(e.store)+')</option>').join('')+'</select></div><div style="display:flex;align-items:end"><button class="btn" style="width:auto" id="nu_btn">+ Δημιουργία</button></div></div><div id="nu_msg" style="margin-top:8px;font-size:13px"></div></div>';
+      h+='<div id="stUserTable"></div>';
+      box.innerHTML=h;
+      document.getElementById('nu_role').onchange=function(){ document.getElementById('nu_store').disabled=(this.value==='admin'||this.value==='hr'||this.value==='seller'); };
+      document.getElementById('nu_btn').onclick=createUser;
+      renderUserTable();
+    }catch(e){ box.innerHTML='<div class="msg err" style="display:block">'+esc(e.message)+'</div>'; }
+  }
+  async function createUser(){
+    const msg=document.getElementById('nu_msg');
+    try{
+      await adminApi('create_user',{email:document.getElementById('nu_email').value.trim(),password:document.getElementById('nu_pass').value,role:document.getElementById('nu_role').value,store:document.getElementById('nu_store').value||null,employee_id:document.getElementById('nu_emp').value||null});
+      msg.style.color='#86efac'; msg.textContent='✓ Δημιουργήθηκε ο λογαριασμός';
+      document.getElementById('nu_email').value=''; document.getElementById('nu_pass').value='';
+      await loadUsers();
+    }catch(e){ msg.style.color='#fca5a5'; msg.textContent=e.message; }
+  }
+  function renderUserTable(){
+    const tb=document.getElementById('stUserTable'); if(!tb) return;
+    let h='<table><thead><tr><th>Email</th><th>Ρόλος</th><th>Κατάστημα</th><th>Υπάλληλος</th><th>Τελευταία σύνδεση</th><th></th></tr></thead><tbody>';
+    if(!USERS.length) h+='<tr><td colspan="6" style="text-align:center;color:var(--mut);padding:16px">Κανένας χρήστης</td></tr>';
+    USERS.forEach(u=>{
+      h+='<tr><td><b>'+esc(u.email)+'</b></td><td>'+esc(u.role)+'</td><td>'+esc(u.store||'-')+'</td><td>'+esc(u.employee_name||'-')+'</td><td style="font-size:12px;color:var(--mut)">'+(u.last_sign_in?new Date(u.last_sign_in).toLocaleString('el-GR'):'—')+'</td><td style="text-align:right;white-space:nowrap"><button class="btn" style="width:auto;padding:6px 10px" onclick="__stEditUser(\''+u.id+'\')">Επεξεργασία</button></td></tr>';
+    });
+    h+='</tbody></table>'; tb.innerHTML=h;
+  }
+  window.__stEditUser=function(id){
+    const u=USERS.find(x=>x.id===id); if(!u) return;
+    const bg=document.createElement('div'); bg.id='stModal'; bg.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;z-index:1000;padding:16px';
+    bg.innerHTML='<div class="card" style="width:520px;max-width:96vw;margin:0"><h2>Επεξεργασία — '+esc(u.email)+'</h2><div class="grid2" style="gap:10px"><div><label>Ρόλος</label><select id="eu_role">'+ROLES.map(r=>'<option value="'+r.v+'"'+(u.role===r.v?' selected':'')+'>'+r.l+'</option>').join('')+'</select></div><div><label>Κατάστημα</label><select id="eu_store"><option value="">—</option>'+STORES.map(s=>'<option'+(u.store===s?' selected':'')+'>'+s+'</option>').join('')+'</select></div><div><label>Σύνδεση υπαλλήλου</label><select id="eu_emp"><option value="">—</option>'+EMP_OPTS.map(e=>'<option value="'+e.id+'"'+(u.employee_id===e.id?' selected':'')+'>'+esc(e.full_name)+'</option>').join('')+'</select></div><div><label>Νέος κωδικός (κενό=χωρίς αλλαγή)</label><input id="eu_pass" type="password" placeholder="••••••"></div></div><div class="row" style="justify-content:space-between;margin-top:16px"><button class="del" style="width:auto" onclick="__stDeleteUser(\''+id+'\')">Διαγραφή</button><div style="display:flex;gap:10px"><button class="del" style="width:auto" onclick="document.getElementById(\'stModal\').remove()">Άκυρο</button><button class="btn" style="width:auto" onclick="__stSaveUser(\''+id+'\')">Αποθήκευση</button></div></div></div>';
+    document.body.appendChild(bg);
+    document.getElementById('eu_role').onchange=function(){ document.getElementById('eu_store').disabled=(this.value==='admin'||this.value==='hr'||this.value==='seller'); };
+  };
+  window.__stSaveUser=async function(id){
+    try{
+      await adminApi('update_user',{id,role:document.getElementById('eu_role').value,store:document.getElementById('eu_store').value||null,employee_id:document.getElementById('eu_emp').value||null,password:document.getElementById('eu_pass').value||undefined});
+      document.getElementById('stModal').remove(); await loadUsers();
+    }catch(e){ alert(e.message); }
+  };
+  window.__stDeleteUser=async function(id){
+    if(!confirm('Οριστική διαγραφή λογαριασμού;')) return;
+    try{ await adminApi('delete_user',{id}); document.getElementById('stModal').remove(); await loadUsers(); }
+    catch(e){ alert(e.message); }
+  };
+  const PHYSICAL_STORES=['Μύκονος','Σαντορίνη','Ρόδος'];
+  async function loadStoresPanel(){
+    const box=document.getElementById('stStores'); if(!box) return;
+    box.innerHTML='<div class="spin">Φόρτωση καταστημάτων...</div>';
+    try{
+      const {data,error}=await sb.from('store_settings').select('store,hourly_cost').order('store');
+      if(error) throw new Error(error.message);
+      const hc={}; (data||[]).forEach(r=>{ hc[r.store]=parseFloat(r.hourly_cost)||0; });
+      let h='<div class="card"><h3 style="margin-top:0">Κόστος εργασίας ανά κατάστημα</h3><p style="color:var(--mut);font-size:13px;margin:-4px 0 12px">€/ώρα για υπολογισμό μισθοδοσίας στον πίνακα κερδοφορίας.</p><div class="storecards">';
+      PHYSICAL_STORES.forEach(st=>{
+        const sid=st.replace(/[^a-zA-Z0-9]/g,'_');
+        h+='<div class="scard"><h4>'+esc(st)+'</h4><div class="row" style="align-items:center"><span>€/ώρα</span><input type="number" min="0" step="0.01" id="st_hc_'+sid+'" data-store="'+esc(st)+'" value="'+(hc[st]||0)+'" style="width:100px;padding:6px;margin:0"></div></div>';
+      });
+      h+='</div><button class="btn" style="width:auto;margin-top:12px" id="st_hc_save">💾 Αποθήκευση</button><div id="st_hc_msg" style="font-size:13px;margin-top:8px"></div></div>';
+      box.innerHTML=h;
+      document.getElementById('st_hc_save').onclick=saveStoresHc;
+    }catch(e){ box.innerHTML='<div class="msg err" style="display:block">'+esc(e.message)+'</div>'; }
+  }
+  async function saveStoresHc(){
+    const msg=document.getElementById('st_hc_msg');
+    try{
+      for(const st of PHYSICAL_STORES){
+        const sid=st.replace(/[^a-zA-Z0-9]/g,'_');
+        const inp=document.getElementById('st_hc_'+sid);
+        const v=parseFloat(inp?.value)||0;
+        const {error}=await sb.from('store_settings').upsert({store:st,hourly_cost:v,updated_at:new Date().toISOString()},{onConflict:'store'});
+        if(error) throw new Error(error.message);
+      }
+      msg.style.color='#86efac'; msg.textContent='✓ Αποθηκεύτηκε';
+      if(typeof loadStoreSettings==='function') await loadStoreSettings();
+      if(typeof loadDashboard==='function') loadDashboard();
+    }catch(e){ msg.style.color='#fca5a5'; msg.textContent=e.message; }
+  }
+  async function loadNotifyPanel(){
+    const box=document.getElementById('stNotify'); if(!box) return;
+    box.innerHTML='<div class="spin">Φόρτωση...</div>';
+    try{
+      const {data,error}=await sb.from('app_settings').select('value').eq('key','report_email').maybeSingle();
+      if(error) throw new Error(error.message);
+      const email=(data?.value||'').trim()||'kotsogiannidis@connectphone.gr';
+      box.innerHTML='<div class="card"><h3 style="margin-top:0">📧 Email αναφορών</h3><p style="color:var(--mut);font-size:13px;margin:-4px 0 12px">Λήψη ημερήσιας αναφοράς από καταστήματα (κουμπί «Αποστολή αναφοράς»).</p><label>Email παραλήπτη</label><input type="email" id="st_report_email" value="'+esc(email)+'" placeholder="name@connectphone.gr"><button class="btn" style="width:auto;margin-top:12px" id="st_report_save">💾 Αποθήκευση</button><div id="st_report_msg" style="font-size:13px;margin-top:8px"></div></div>';
+      document.getElementById('st_report_save').onclick=saveNotifyEmail;
+    }catch(e){ box.innerHTML='<div class="msg err" style="display:block">'+esc(e.message)+'</div>'; }
+  }
+  async function saveNotifyEmail(){
+    const msg=document.getElementById('st_report_msg');
+    const email=document.getElementById('st_report_email').value.trim();
+    if(!email||!email.includes('@')){ msg.style.color='#fca5a5'; msg.textContent='Βάλε έγκυρο email'; return; }
+    try{
+      const {error}=await sb.from('app_settings').upsert({key:'report_email',value:email,updated_at:new Date().toISOString()});
+      if(error) throw new Error(error.message);
+      msg.style.color='#86efac'; msg.textContent='✓ Αποθηκεύτηκε';
+    }catch(e){ msg.style.color='#fca5a5'; msg.textContent=e.message; }
+  }
+  let lastWooStatus={configured:false,source:'none'};
+  async function loadApiPanel(){
+    const box=document.getElementById('stApi'); if(!box) return;
+    box.innerHTML='<div class="spin">Φόρτωση...</div>';
+    let woo={configured:false,url:'',has_key:false,has_secret:false,source:'none'};
+    let ai={configured:false,model:'gpt-4o-mini',source:'none'};
+    try{
+      const [w,a]=await Promise.all([adminApi('woo_status'),adminApi('openai_status')]);
+      woo=w; ai=a;
+      lastWooStatus=woo;
+    }catch(e){ box.innerHTML='<div class="msg err" style="display:block">'+esc(e.message)+'</div>'; return; }
+    const srcLabel=woo.source==='settings'?'Settings (ενεργά)':woo.source==='env'?'Supabase env (παλιά)':'—';
+    const envWarn=woo.source==='env'?'<div class="msg err" style="display:block;margin:0 0 12px;font-size:13px">ℹ️ Τα κλειδιά διαβάζονται από <b>Supabase env secrets</b>. Για νέα κλειδιά: βάλε <b>ck_</b> + <b>cs_</b> και πάτα <b>Αποθήκευση Woo</b> (θα γίνουν Settings).</div>':'';
+    const needKeys=!woo.configured?'<div class="msg err" style="display:block;margin:0 0 12px;font-size:13px">⚠️ <b>Λείπουν credentials.</b> Copy από WooCommerce → REST API τα <b>ck_</b> / <b>cs_</b> και πάτα <b>Αποθήκευση Woo</b> πριν το sync.</div>':'';
+    box.innerHTML=
+      '<div class="card" style="background:rgba(255,255,255,.02);margin-bottom:14px"><h3 style="margin-top:0">🛒 WooCommerce API</h3>'
+      +needKeys+envWarn
+      +'<p style="color:var(--mut);font-size:13px;margin:-4px 0 12px">Για συγχρονισμό παραγγελιών (WooCommerce Health).</p>'
+      +'<div class="grid2" style="gap:10px"><div><label>Shop URL</label><input id="woo_url" type="url" placeholder="https://connectphone.eu" value="'+esc(woo.url||'')+'"></div>'
+      +'<div><label>Consumer Key</label><input id="woo_key" type="text" placeholder="ck_..." autocomplete="off"'+(woo.source==='env'?' autofocus':'')+'></div>'
+      +'<div><label>Consumer Secret</label><input id="woo_secret" type="password" placeholder="cs_..." autocomplete="off"></div>'
+      +'<div style="display:flex;align-items:end;gap:8px;flex-wrap:wrap"><button class="btn" style="width:auto" id="woo_save_btn">💾 Αποθήκευση Woo</button><button class="small" type="button" id="woo_test_btn">🔌 Test σύνδεσης</button><button class="del" style="width:auto" type="button" id="woo_clear_btn">Διαγραφή</button></div></div>'
+      +'<div style="font-size:13px;margin-top:8px">Κατάσταση: <b style="color:'+(woo.configured?'#86efac':'#fca5a5')+'">'+(woo.configured?'✓ Έτοιμο για sync':'✗ Λείπουν credentials')+'</b> · Πηγή: '+esc(srcLabel)+'</div>'
+      +'<div id="woo_api_msg" style="font-size:13px;margin-top:6px"></div></div>'
+      +'<div class="card" style="background:rgba(255,255,255,.02)"><h3 style="margin-top:0">🤖 OpenAI API (OCR serials)</h3>'
+      +'<p style="color:var(--mut);font-size:13px;margin:-4px 0 12px">Για AI σκανάρισμα serial από φωτογραφίες πακέτων.</p>'
+      +'<div style="display:grid;gap:10px;max-width:520px"><div><label>API Key</label><input id="set_openai" type="password" placeholder="'+(ai.configured?'•••••• (ήδη ρυθμισμένο)':'sk-...')+'" autocomplete="off"></div>'
+      +'<div style="font-size:13px">Κατάσταση: <b style="color:'+(ai.configured?'#86efac':'#fca5a5')+'">'+(ai.configured?'✓ Ενεργό':'✗ Όχι ρυθμισμένο')+'</b> · Μοντέλο: <code>'+esc(ai.model)+'</code></div>'
+      +'<div class="row" style="gap:10px;flex-wrap:wrap"><button class="btn" style="width:auto" id="ai_save_btn">💾 Αποθήκευση OpenAI</button><button class="del" style="width:auto" id="ai_clear_btn">Διαγραφή</button></div>'
+      +'<div id="set_ai_msg" style="font-size:13px"></div></div></div>';
+    document.getElementById('woo_save_btn').onclick=saveWooApi;
+    document.getElementById('woo_test_btn').onclick=testWooApi;
+    document.getElementById('woo_clear_btn').onclick=clearWooApi;
+    document.getElementById('ai_save_btn').onclick=saveOpenAiApi;
+    document.getElementById('ai_clear_btn').onclick=clearOpenAiApi;
+  }
+  async function saveWooApi(){
+    const msg=document.getElementById('woo_api_msg');
+    const url=document.getElementById('woo_url').value.trim();
+    const key=document.getElementById('woo_key').value.trim();
+    const secret=document.getElementById('woo_secret').value.trim();
+    if(!url){ msg.style.color='#fca5a5'; msg.textContent='Βάλε Shop URL'; return; }
+    if(!key||!secret){ msg.style.color='#fca5a5'; msg.textContent='Βάλε Consumer Key και Secret (copy από WooCommerce → REST API)'; return; }
+    try{
+      await adminApi('set_woo_credentials',{url,key,secret});
+      document.getElementById('woo_key').value=''; document.getElementById('woo_secret').value='';
+      msg.style.color='#86efac'; msg.textContent='✓ WooCommerce API αποθηκεύτηκε';
+      loadApiPanel();
+    }catch(e){ msg.style.color='#fca5a5'; msg.textContent=e.message; }
+  }
+  async function testWooApi(){
+    const msg=document.getElementById('woo_api_msg');
+    msg.style.color='var(--mut)'; msg.textContent='Έλεγχος σύνδεσης...';
+    try{
+      const url=document.getElementById('woo_url').value.trim();
+      const key=document.getElementById('woo_key').value.trim();
+      const secret=document.getElementById('woo_secret').value.trim();
+      if(url&&key&&secret) await adminApi('set_woo_credentials',{url,key,secret});
+      else if(!lastWooStatus.configured) throw new Error('Βάλε URL + Consumer Key + Secret');
+      const r=await adminApi('test_woo');
+      msg.style.color='#86efac'; msg.textContent='✓ '+ (r.message||'Σύνδεση OK');
+      loadApiPanel();
+    }catch(e){ msg.style.color='#fca5a5'; msg.textContent=e.message; }
+  }
+  async function clearWooApi(){
+    if(!confirm('Διαγραφή WooCommerce credentials;')) return;
+    const msg=document.getElementById('woo_api_msg');
+    try{
+      const r=await adminApi('clear_woo_credentials');
+      lastWooStatus={configured:!!r.configured,source:r.source||'none'};
+      msg.style.color='#86efac'; msg.textContent='✓ '+(r.message||'Διαγράφηκαν');
+      loadApiPanel();
+    }
+    catch(e){ msg.style.color='#fca5a5'; msg.textContent=e.message; }
+  }
+  async function saveOpenAiApi(){
+    const key=document.getElementById('set_openai').value.trim();
+    const msg=document.getElementById('set_ai_msg');
+    if(!key){ msg.style.color='#fca5a5'; msg.textContent='Βάλε sk-... key'; return; }
+    try{ await adminApi('set_openai_key',{api_key:key}); document.getElementById('set_openai').value=''; msg.style.color='#86efac'; msg.textContent='✓ Αποθηκεύτηκε'; loadApiPanel(); }
+    catch(e){ msg.style.color='#fca5a5'; msg.textContent=e.message; }
+  }
+  async function clearOpenAiApi(){
+    if(!confirm('Διαγραφή OpenAI key;')) return;
+    const msg=document.getElementById('set_ai_msg');
+    try{ await adminApi('clear_openai_key'); msg.style.color='#86efac'; msg.textContent='✓ Διαγράφηκε'; loadApiPanel(); }
+    catch(e){ msg.style.color='#fca5a5'; msg.textContent=e.message; }
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',waitSettings); else waitSettings();
+  window.__loadAdminSettings=function(tab){ showSettingsTab(tab||'api'); };
+})();
+</script>
+
+<script>
+(function(){
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let MY_UID=null,SELLER_MAP={};
+async function uid(){if(window.__IMPERSONATE_UID)return window.__IMPERSONATE_UID;if(MY_UID)return MY_UID;const {data:{user}}=await sb.auth.getUser();MY_UID=user?.id;return MY_UID;}
+async function uploadPhoto(file,sub){const id=await uid();const path=id+'/'+sub+'/'+Date.now()+'.'+(file.name.split('.').pop()||'jpg');const {error}=await sb.storage.from('seller-photos').upload(path,file);if(error)throw error;return path;}
+async function openPhoto(path){const {data}=await sb.storage.from('seller-photos').createSignedUrl(path,3600);if(data?.signedUrl)window.open(data.signedUrl);}
+function parseSerials(t){const o=[];(t||'').split(/[\r\n,;]+/).forEach(l=>{(l.match(/[0-9]{10,22}/g)||[]).forEach(x=>o.push(x));if(!l.match(/[0-9]/)&&l.trim())o.push(l.trim().replace(/\s/g,''));});return[...new Set(o.filter(Boolean))];}
+function mergeSerialText(existing,found){return parseSerials([existing,...(found||[])].filter(Boolean).join('\n')).join('\n');}
+function downloadSerialsTxt(text,name){const s=parseSerials(text);if(!s.length)return alert('Κανένα serial');const blob=new Blob([s.join('\n')+'\n'],{type:'text/plain;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name||('serials_'+new Date().toISOString().slice(0,10)+'.txt');a.click();URL.revokeObjectURL(a.href);}
+async function fileToScanBase64(file){return new Promise((resolve,reject)=>{const img=new Image();const url=URL.createObjectURL(file);img.onload=()=>{const max=1600;let w=img.width,h=img.height;if(w>max||h>max){if(w>h){h=Math.round(h*max/w);w=max;}else{w=Math.round(w*max/h);h=max;}}const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);URL.revokeObjectURL(url);const dataUrl=c.toDataURL('image/jpeg',0.85);resolve({base64:dataUrl.split(',')[1],mime_type:'image/jpeg'});};img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error('Άκυρη εικόνα'));};img.src=url;});}
+async function scanPackagePhoto(file){const {base64,mime_type}=await fileToScanBase64(file);const {data,error}=await sb.functions.invoke('scan-package-photo',{body:{image_base64:base64,mime_type}});if(error)throw new Error(error.message||'Σφάλμα σκαναρίσματος');if(!data?.ok)throw new Error(data?.error||'Σφάλμα AI');return data.serials||[];}
+function parseCosmote(text){const lines=text.split(/\r?\n/).filter(l=>l.trim());if(!lines.length)return[];const d=lines[0].includes(';')?';':',';const hdr=lines[0].split(d).map(h=>h.trim().toLowerCase());let si=hdr.findIndex(h=>/serial|iccid|sim|αριθ|msisdn|eid/.test(h));const rows=[];for(let i=1;i<lines.length;i++){const c=lines[i].split(d);const raw=si>=0?c[si]:lines[i];(raw.match(/[0-9]{10,22}/g)||[]).forEach(n=>rows.push({serial_number:n,raw:{line:lines[i]}}));}if(!rows.length)lines.forEach(l=>{(l.match(/[0-9]{10,22}/g)||[]).forEach(n=>rows.push({serial_number:n,raw:{line:l}}));});return rows;}
+window.initSellerPanel=async function(){await uid();document.querySelectorAll('#sellerTabs button[data-ssec]').forEach(b=>{b.onclick=()=>{document.querySelectorAll('#sellerTabs button').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.ssection').forEach(s=>s.classList.remove('active'));$('ssec-'+b.dataset.ssec).classList.add('active');if(b.dataset.ssec==='points')loadSellerPoints();if(b.dataset.ssec==='drop')buildDropForm();if(b.dataset.ssec==='stock')loadSellerStock();};});loadSellerPoints();buildDropForm();loadSellerStock();};
+async function loadSellerPoints(){const box=$('sellerPoints');if(!box)return;const id=await uid();const {data}=await sb.from('v_sales_point_summary').select('*').eq('seller_id',id).order('name');const {data:sum}=await sb.from('v_seller_summary').select('packages_sold,commission_total,commission_per_package').eq('seller_id',id).maybeSingle();let h='';if(sum){h+='<div class="card" style="margin-bottom:12px;background:rgba(255,255,255,.03)"><div class="row"><span>Πωλήθηκαν (σύνολο)</span><b style="color:#86efac">'+(sum.packages_sold||0)+'</b></div><div class="row"><span>Προμήθεια (€/πακέτο)</span><b>'+eur(sum.commission_per_package||0)+'</b></div><div class="row tot-row"><span>Προμήθεια σύνολο</span><b style="color:#7dd3fc">'+eur(sum.commission_total||0)+'</b></div></div>';}h+='<div class="card"><div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px"><h3 style="margin:0">Σημεία</h3><button class="btn" style="width:auto" onclick="__slNewPoint()">+ Νέο</button></div><div class="storecards">';(data||[]).forEach(p=>{h+='<div class="scard" style="cursor:pointer" onclick="__slOpenPoint(\''+p.id+'\')"><h4>'+esc(p.name)+'</h4><div class="row"><span>Έξω</span><b>'+(p.packages_out||0)+'</b></div><div class="row"><span>Πωλήθηκαν</span><b style="color:#86efac">'+(p.packages_sold||0)+'</b></div><div style="font-size:12px;color:var(--mut)">'+esc(p.address||'')+'</div></div>';});h+='</div></div>';box.innerHTML=h;}
+window.__slNewPoint=function(){const bg=document.createElement('div');bg.id='slModal';bg.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:center;justify-content:center;z-index:999;padding:16px';bg.innerHTML='<div class="card" style="width:520px;max-width:96vw"><h2>Νέο σημείο</h2><label>Όνομα</label><input id="sp_name"><label>Διεύθυνση</label><input id="sp_addr"><label>Τηλέφωνο</label><input id="sp_phone"><label>Φωτό</label><input id="sp_receipt" type="file" accept="image/*"><div class="row" style="justify-content:flex-end;gap:10px;margin-top:12px"><button class="del" style="width:auto" onclick="document.getElementById(\'slModal\').remove()">Άκυρο</button><button class="btn" style="width:auto" onclick="__slSavePoint()">OK</button></div></div>';document.body.appendChild(bg);};
+window.__slSavePoint=async function(){const name=document.getElementById('sp_name').value.trim();if(!name)return alert('Όνομα');let rc=null;const f=document.getElementById('sp_receipt')?.files?.[0];if(f)try{rc=await uploadPhoto(f,'receipts');}catch(e){return alert(e.message);}const {error}=await sb.from('sales_points').insert({seller_id:await uid(),name,address:document.getElementById('sp_addr').value,phone:document.getElementById('sp_phone').value,receipt_photo_path:rc});if(error)return alert(error.message);document.getElementById('slModal')?.remove();loadSellerPoints();};
+window.__slOpenPoint=async function(id){const {data:p}=await sb.from('sales_points').select('*').eq('id',id).single();const {data:pkgs}=await sb.from('field_packages').select('*').eq('sales_point_id',id).order('created_at',{ascending:false});const bg=document.createElement('div');bg.id='slModal';bg.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.65);overflow:auto;z-index:999;padding:16px';let h='<div class="card" style="max-width:720px;margin:12px auto"><h2>'+esc(p.name)+'</h2><p style="color:var(--mut)">'+esc(p.address||'')+'</p>';if(p.receipt_photo_path)h+='<button class="small" onclick="__slPhoto(\''+esc(p.receipt_photo_path)+'\')">📷 Φωτο</button>';h+='<table><tr><th>Serial</th><th>Status</th></tr>';(pkgs||[]).forEach(x=>{h+='<tr><td><code>'+esc(x.serial_number)+'</code></td><td>'+(x.status==='sold'?'Πωλήθηκε':'Έξω')+'</td></tr>';});h+='</table><button class="del" style="width:auto;margin-top:10px" onclick="document.getElementById(\'slModal\').remove()">Κλείσιμο</button></div>';bg.innerHTML=h;document.body.appendChild(bg);};
+window.__slPhoto=path=>openPhoto(path);
+async function buildDropForm(){const box=$('sellerDrop');if(!box)return;const {data:pts}=await sb.from('sales_points').select('id,name').eq('seller_id',await uid()).eq('active',true);box.innerHTML='<div class="card"><h3>Κατάθεση πακέτων</h3><p style="font-size:13px;color:var(--mut);margin:-4px 0 10px">Φωτογράφισε τα πακέτα → AI σκανάρισμα → έλεγχος serials → καταχώρηση ή export .txt για Cosmote.</p><select id="sd_point"><option value="">— σημείο —</option>'+(pts||[]).map(p=>'<option value="'+p.id+'">'+esc(p.name)+'</option>').join('')+'</select><label style="margin-top:10px">Φωτογραφία πακέτων</label><input id="sd_photo" type="file" accept="image/*" capture="environment"><div class="row" style="gap:8px;margin-top:8px;flex-wrap:wrap"><button class="btn" style="width:auto" id="sd_scan">🔍 AI Σκανάρισμα</button><button class="small" id="sd_export" type="button">⬇️ Export .txt</button></div><div id="sd_scan_msg" style="font-size:13px;margin-top:6px"></div><label style="margin-top:10px">Serials (ένας/γραμμή — επεξεργάσου αν χρειάζεται)</label><textarea id="sd_serials" rows="8" placeholder="serial ανά γραμμή"></textarea><div id="sd_count" style="font-size:12px;color:var(--mut);margin-top:4px"></div><button class="btn" id="sd_btn" style="margin-top:8px">Καταχώρηση</button><div id="sd_msg"></div></div>';const upd=()=>{const n=parseSerials($('sd_serials').value).length;const c=$('sd_count');if(c)c.textContent=n?('Βρέθηκαν '+n+' serials'):'';};$('sd_serials').oninput=upd;upd();$('sd_btn').onclick=submitDrop;$('sd_export').onclick=()=>downloadSerialsTxt($('sd_serials').value);$('sd_scan').onclick=async()=>{const f=$('sd_photo')?.files?.[0];const msg=$('sd_scan_msg');if(!f){msg.style.color='#fca5a5';msg.textContent='Επίλεξε φωτογραφία';return;}$('sd_scan').disabled=true;msg.style.color='var(--mut)';msg.textContent='Σκανάρισμα... (~10–20 δευτ.)';try{const found=await scanPackagePhoto(f);const ta=$('sd_serials');ta.value=mergeSerialText(ta.value,found);upd();msg.style.color='#86efac';msg.textContent='✓ AI: '+found.length+' serials'+(found.length?' — έλεγξε πριν την καταχώρηση':'');}catch(e){msg.style.color='#fca5a5';msg.textContent=e.message;}finally{$('sd_scan').disabled=false;};};}
+async function submitDrop(){const pid=$('sd_point').value;const serials=parseSerials($('sd_serials').value);const msg=$('sd_msg');if(!pid||!serials.length){msg.textContent='Σημείο + serials';return;}let photo=null;const f=$('sd_photo')?.files?.[0];if(f)try{photo=await uploadPhoto(f,'drops');}catch(e){msg.textContent=e.message;return;}const id=await uid();const {data:drop,error:e1}=await sb.from('package_drops').insert({sales_point_id:pid,seller_id:id,photo_path:photo}).select().single();if(e1){msg.textContent=e1.message;return;}const {error:e2}=await sb.from('field_packages').insert(serials.map(s=>({drop_id:drop.id,sales_point_id:pid,seller_id:id,serial_number:s,package_type:'5€'})));if(e2){msg.textContent=e2.message;return;}msg.textContent='✓ '+serials.length+' πακέτα';loadSellerPoints();loadSellerStock();}
+async function loadSellerStock(){const box=$('sellerStock');if(!box)return;const td=new Date().toISOString().slice(0,10);const {data}=await sb.from('seller_daily_stock').select('*').eq('seller_id',await uid()).eq('stock_date',td);box.innerHTML='<div class="card"><h3>Απόθεμα σήμερα</h3>'+(data||[]).map(r=>'<div class="bigtotal"><span class="lbl">'+r.package_type+'</span><span class="total">'+(r.qty_dropped||0)+'/'+(r.qty_allocated||0)+'</span></div>').join('')+'</div>';}
+async function loadSellerMap(){SELLER_MAP={};try{const r=await sb.functions.invoke('admin-settings',{body:{action:'list_users'}});(r.data?.users||[]).filter(u=>u.role==='seller').forEach(u=>SELLER_MAP[u.id]=u.email);}catch(e){}}
+function slabel(id){return SELLER_MAP[id]||id?.slice(0,8)||'?';}
+function bindAllAdminNav(){if(window.__bindAdminNavAll)window.__bindAdminNavAll();}
+async function initAdminSellers(wrap){const {data:{session}}=await sb.auth.getSession();if(!session)return setTimeout(()=>initAdminSellers(wrap),800);const {data:prof}=await sb.from('profiles').select('role').eq('id',session.user.id).single();if(prof?.role!=='admin')return;if(!$('navSellers')){const b=document.createElement('button');b.className='pbtn';b.id='navSellers';b.textContent='📦 Πωλητές';$('adminTopNav').appendChild(b);}if($('sellersAdminModule')&&!$('admSlSellers'))$('sellersAdminModule').remove();if(!$('sellersAdminModule')){const m=document.createElement('div');m.id='sellersAdminModule';m.className='hidden';m.innerHTML='<div class="card"><h2>📦 Πωλητές</h2><div class="tabs" id="admSlTabs"><button class="pbtn active" data-asl="sellers">👤 Πωλητές</button><button class="pbtn" data-asl="points">📍 Σημεία</button><button class="pbtn" data-asl="cosmote">Cosmote</button><button class="pbtn" data-asl="stock">Απόθεμα</button></div><div id="admSlSellers"></div><div id="admSlPoints" class="hidden"></div><div id="admSlCosmote" class="hidden"></div><div id="admSlStock" class="hidden"></div></div>';wrap.appendChild(m);document.querySelectorAll('#admSlTabs .pbtn').forEach(b=>{b.onclick=function(){document.querySelectorAll('#admSlTabs .pbtn').forEach(x=>x.classList.remove('active'));b.classList.add('active');['sellers','points','cosmote','stock'].forEach(k=>{const el=$('admSl'+k.charAt(0).toUpperCase()+k.slice(1));if(el)el.classList.toggle('hidden',b.dataset.asl!==k);});if(b.dataset.asl==='sellers')renderAdminSellersList();if(b.dataset.asl==='points')renderAdminPoints();if(b.dataset.asl==='cosmote')renderAdminCosmote();if(b.dataset.asl==='stock')renderAdminStock();};});}bindAllAdminNav();}
+async function loadAdminSellers(){await loadSellerMap();renderAdminSellersList();renderAdminPoints();renderAdminCosmote();renderAdminStock();}
+window.__loadAdminSellers=loadAdminSellers;
+async function renderAdminSellersList(){
+  const box=$('admSlSellers'); if(!box) return;
+  box.innerHTML='<div class="spin">Φόρτωση πωλητών...</div>';
+  await loadSellerMap();
+  const {data,error}=await sb.from('v_seller_summary').select('*');
+  if(error){ box.innerHTML='<div class="msg err" style="display:block">'+esc(error.message)+'</div>'; return; }
+  const sellers=(data||[]).sort((a,b)=>slabel(a.seller_id).localeCompare(slabel(b.seller_id),'el'));
+  let h='<p style="color:var(--mut);font-size:13px;margin:-4px 0 12px">Όλοι οι πωλητές μαζί — καταθέσεις, πωλήσεις και προμήθεια. Ορίζεις εσύ το €/πακέτο.</p><div class="storecards">';
+  sellers.forEach(s=>{
+    const email=slabel(s.seller_id);
+    const name=s.display_name||email;
+    h+='<div class="scard"><h4>'+esc(name)+'</h4><div style="font-size:12px;color:var(--mut);margin-bottom:8px">'+esc(email)+'</div>';
+    h+='<div class="row"><span>Σημεία</span><b>'+(s.points_count||0)+'</b></div>';
+    h+='<div class="row"><span>Καταθέσεις</span><b>'+(s.drops_count||0)+'</b></div>';
+    h+='<div class="row"><span>Έξω τώρα</span><b>'+(s.packages_out||0)+'</b></div>';
+    h+='<div class="row"><span>Πωλήθηκαν</span><b style="color:#86efac">'+(s.packages_sold||0)+'</b></div>';
+    h+='<div class="row"><span>Προμήθεια σύνολο</span><b style="color:#7dd3fc">'+eur(s.commission_total||0)+'</b></div>';
+    h+='<div class="row" style="align-items:center;margin-top:8px"><span>€/πακέτο</span><input type="number" min="0" step="0.01" id="comm_'+s.seller_id+'" value="'+(parseFloat(s.commission_per_package)||0.5)+'" style="width:80px;padding:5px;margin:0"></div>';
+    h+='<div class="row" style="gap:8px;margin-top:10px;flex-wrap:wrap"><button class="small" type="button" onclick="__saveSellerComm(\''+s.seller_id+'\')">💾 Προμήθεια</button><button class="small" type="button" onclick="__viewAsSeller(\''+s.seller_id+'\')">👁 Προβολή</button></div></div>';
+  });
+  h+='</div>';
+  if(!sellers.length) h='<p style="color:var(--mut)">Δεν υπάρχουν πωλητές. Δημιούργησε λογαριασμούς ρόλου «Πωλητής» από Settings → Χρήστες.</p>';
+  box.innerHTML=h;
+}
+window.__saveSellerComm=async function(sid){
+  const inp=document.getElementById('comm_'+sid);
+  const v=parseFloat(inp?.value)||0;
+  const {error}=await sb.from('seller_settings').upsert({seller_id:sid,commission_per_package:v,updated_at:new Date().toISOString()});
+  if(error) return alert(error.message);
+  renderAdminSellersList();
+};
+window.__viewAsSeller=async function(sid){
+  await loadSellerMap();
+  let email=SELLER_MAP[sid]||'';
+  if(!email){ try{ const r=await sb.functions.invoke('admin-settings',{body:{action:'list_users'}}); const u=(r.data?.users||[]).find(x=>x.id===sid); email=u?.email||sid; }catch(_e){} }
+  viewAsUser({id:sid,role:'seller',store:null,email});
+};
+async function renderAdminPoints(){const box=$('admSlPoints');if(!box)return;const {data}=await sb.from('v_sales_point_summary').select('*').order('name');box.innerHTML='<table><thead><tr><th>Σημείο</th><th>Πωλητής</th><th>Έξω</th><th>Πωλήθηκαν</th><th></th></tr></thead><tbody>'+(data||[]).map(p=>'<tr><td><b>'+esc(p.name)+'</b><br><small>'+esc(p.address||'')+'</small></td><td>'+esc(slabel(p.seller_id))+'</td><td>'+(p.packages_out||0)+'</td><td style="color:#86efac">'+(p.packages_sold||0)+'</td><td><button class="small" onclick="__slOpenPoint(\''+p.id+'\')">Καρτέλα</button></td></tr>').join('')+'</tbody></table>';}
+function renderAdminCosmote(){const box=$('admSlCosmote');if(!box)return;box.innerHTML='<div class="card"><h3>Upload Cosmote</h3><input type="file" id="cos_file"><button class="btn" style="width:auto;margin-top:8px" id="cos_btn">Εισαγωγή</button><div id="cos_msg"></div></div><div id="cos_results"></div>';$('cos_btn').onclick=importCosmote;loadCosmoteResults();}
+async function importCosmote(){const f=$('cos_file')?.files?.[0];const msg=$('cos_msg');if(!f){msg.textContent='Αρχείο;';return;}const rows=parseCosmote(await f.text());if(!rows.length){msg.textContent='Κανένα serial';return;}const {data:{user}}=await sb.auth.getUser();const {data:imp,error:e1}=await sb.from('cosmote_imports').insert({imported_by:user.id,filename:f.name,row_count:rows.length}).select().single();if(e1){msg.textContent=e1.message;return;}for(let i=0;i<rows.length;i+=100){const {error:e2}=await sb.from('cosmote_activations').insert(rows.slice(i,i+100).map(r=>({import_id:imp.id,serial_number:r.serial_number,raw_data:r.raw})));if(e2){msg.textContent=e2.message;return;}}const {data:m,error:e3}=await sb.rpc('match_cosmote_import',{p_import_id:imp.id});if(e3){msg.textContent=e3.message;return;}msg.textContent='✓ '+rows.length+' / '+m+' matched';loadCosmoteResults();}
+async function loadCosmoteResults(){const box=$('cos_results');if(!box)return;await loadSellerMap();const {data}=await sb.from('cosmote_activations').select('*, sales_points(name)').not('sales_point_id','is',null).order('matched_at',{ascending:false}).limit(50);box.innerHTML='<table><tr><th>Serial</th><th>Σημείο</th><th>Πωλητής</th></tr>'+(data||[]).map(a=>'<tr><td><code>'+esc(a.serial_number)+'</code></td><td>'+esc(a.sales_points?.name||'')+'</td><td>'+esc(slabel(a.seller_id))+'</td></tr>').join('')+'</table>';}
+async function renderAdminStock(){const box=$('admSlStock');if(!box)return;await loadSellerMap();const td=new Date().toISOString().slice(0,10);box.innerHTML='<div class="card"><h3>Απόθεμα/μέρα</h3><select id="as_seller">'+Object.keys(SELLER_MAP).map(id=>'<option value="'+id+'">'+esc(SELLER_MAP[id])+'</option>').join('')+'</select><input id="as_qty" type="number" value="20"><button class="btn" id="as_btn">OK</button><div id="as_msg"></div></div>';$('as_btn').onclick=async()=>{const {error}=await sb.from('seller_daily_stock').upsert({seller_id:$('as_seller').value,stock_date:td,package_type:'5€',qty_allocated:+$('as_qty').value||0},{onConflict:'seller_id,stock_date,package_type'});$('as_msg').textContent=error?error.message:'✓';};}
+function waitSl(){const w=document.querySelector('#admin > .wrap');if(!w||!$('adminTopNav'))return setTimeout(waitSl,500);initAdminSellers(w);}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',waitSl);else waitSl();
+})();
+</script>
+
+</body>
+</html>

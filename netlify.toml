@@ -1,0 +1,26 @@
+# ConnectPhone Ταμείο — static SPA on Netlify (no build step)
+[build]
+  publish = "."
+
+# POS app: always serve fresh HTML so store staff get updates immediately
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+# Single-page app: deep links fall back to index.html
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
