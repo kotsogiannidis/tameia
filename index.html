@@ -546,7 +546,7 @@ sb.auth.getSession().then(({data})=>{if(data.session)afterLogin();});
 </script>
 <script>
 document.querySelectorAll('.tabs button[data-sec]').forEach(b=>{
-  b.onclick=()=>{document.querySelectorAll('.tabs button[data-sec]').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));$('sec-'+b.dataset.sec).classList.add('active');if(b.dataset.sec==='qresim'&&window.loadQrWarehouse)window.loadQrWarehouse();};
+  b.onclick=()=>{document.querySelectorAll('.tabs button[data-sec]').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));$('sec-'+b.dataset.sec).classList.add('active');if(b.dataset.sec==='qresim'&&window.loadQrWarehouse)window.loadQrWarehouse('qrEsBox');if(b.dataset.sec==='warehouse'&&window.loadQrWarehouse&&PHYSICAL_STORES.indexOf(MY_STORE)>=0)window.loadQrWarehouse('qrWhBox');};
 });
 function myProducts(){ return isOnline()?ONLINE_PRODUCTS:LOADED_TYPES; }
 function emptyStock(){ if(!STOCK[EMPTY_NAME]) STOCK[EMPTY_NAME]={empty:0,l10:0,lun:0,lvf:0,es:0,ee:0,ls:0,le:0}; return STOCK[EMPTY_NAME]; }
@@ -645,7 +645,8 @@ function buildWarehouseUI(){
   } else {
     box.innerHTML='<div class="card"><h3>Άδεια πακέτα <span class="badge">5€</span></h3><table><thead><tr><th>Προϊόν</th><th>SIM</th><th>eSIM</th></tr></thead><tbody id="emptyBody"></tbody></table></div>'
       +'<div class="card"><h3>Φορτωμένα <span class="badge">15€</span></h3><table><thead><tr><th>Προϊόν</th><th>SIM</th><th>eSIM</th><th></th></tr></thead><tbody id="loadedBody"></tbody></table><p style="font-size:13px;color:var(--mut)">Φόρτωση → −1 από Άδεια ίδιου τύπου (SIM ή eSIM).</p></div>'
-      +'<div class="card" id="esimCatalogCard"><h3>🛒 eSIM προς πώληση — connectphone.eu</h3><p style="font-size:13px;color:var(--mut);margin-top:-6px">Τραβάεις από την κεντρική αποθήκη (συγχρονισμένη με WooCommerce/Elementor).</p><div id="esimCatalog"><div class="spin">Φόρτωση catalog...</div></div><div id="esimPullMsg" style="font-size:13px;margin-top:8px"></div></div>';
+      +'<div class="card" id="esimCatalogCard"><h3>🛒 eSIM προς πώληση — connectphone.eu</h3><p style="font-size:13px;color:var(--mut);margin-top:-6px">Τραβάεις από την κεντρική αποθήκη (συγχρονισμένη με WooCommerce/Elementor).</p><div id="esimCatalog"><div class="spin">Φόρτωση catalog...</div></div><div id="esimPullMsg" style="font-size:13px;margin-top:8px"></div></div>'
+      +'<div class="card" id="qrWarehouseCard"><h3>📱 QR Unlimited eSIM (15€)</h3><p style="font-size:13px;color:var(--mut);margin-top:-6px">Για φορτωμένα unlimited eSIM: πάτα <b>📱 Προβολή</b> (ανοίγει fullscreen στο κινητό) και μετά <b>✓ Πήρα αυτό</b> — το QR ανοίγει αυτόματα μετά την καταχώρηση.</p><div id="qrWhBox"><div class="spin">Φόρτωση QR...</div></div></div>';
   }
 }
 // ---- totals ----
@@ -731,9 +732,14 @@ async function pullEsim(variationId){
 }
 window.pullEsim=pullEsim;
 function showQrFullscreen(url,title){
+  document.querySelectorAll('.qr-overlay').forEach(x=>x.remove());
   const ov=document.createElement('div'); ov.className='qr-overlay';
-  ov.innerHTML='<img src="'+esc(url)+'" alt="QR"><div style="color:#fff;margin-top:10px;font-size:14px;text-align:center">'+esc(title||'')+'</div><button type="button" class="close">Κλείσιμο</button>';
-  ov.querySelector('.close').onclick=()=>ov.remove();
+  const img=document.createElement('img'); img.src=url; img.alt='QR';
+  img.onerror=()=>{ img.alt='Σφάλμα φόρτωσης εικόνας'; };
+  const cap=document.createElement('div'); cap.style.cssText='color:#fff;margin-top:10px;font-size:14px;text-align:center;max-width:92vw'; cap.textContent=title||'';
+  const close=document.createElement('button'); close.type='button'; close.className='close'; close.textContent='Κλείσιμο';
+  close.onclick=()=>ov.remove();
+  ov.appendChild(img); ov.appendChild(cap); ov.appendChild(close);
   ov.onclick=e=>{ if(e.target===ov) ov.remove(); };
   document.body.appendChild(ov);
 }
@@ -743,50 +749,56 @@ async function qrInvoke(action,payload){
   if(!data?.ok) throw new Error(data?.error||'Σφάλμα QR');
   return data;
 }
-window.loadQrWarehouse=async function(){
-  const box=$('qrEsBox'); if(!box) return;
+function renderQrWarehouseList(box,avail,claims){
+  let html='<div class="card" style="margin:0;padding:0;border:0;background:transparent"><h3 style="margin-top:0">📱 Διαθέσιμα Unlimited eSIM (15€)</h3><p style="font-size:13px;color:var(--mut);margin-top:-6px">'+avail.length+' διαθέσιμα QR από connectphone.eu</p>';
+  if(!avail.length) html+='<p style="color:var(--mut)">Δεν υπάρχουν διαθέσιμα unlimited eSIM QR αυτή τη στιγμή.</p>';
+  else{
+    html+='<div class="qr-list">'+avail.map(q=>{
+      const img=q.image_url?('<img src="'+esc(q.image_url)+'" alt="" style="width:48px;height:48px;border-radius:8px;object-fit:cover;background:#fff">'):'';
+      return '<div class="qr-card">'+img+'<div class="meta"><div class="t">'+esc(q.title)+'</div><div class="s">'+(q.serial?('Serial: '+esc(q.serial)):'')+'</div></div><div class="acts"><button class="small" type="button" data-show="'+q.wp_qr_id+'">📱 Προβολή</button><button class="load1" type="button" data-claim="'+q.wp_qr_id+'">✓ Πήρα αυτό</button></div></div>';
+    }).join('')+'</div>';
+  }
+  html+='</div><div class="card" style="margin-top:14px;padding:16px;border:1px solid var(--line);background:rgba(0,0,0,.15)"><h3>Ιστορικό '+esc(MY_STORE||'')+'</h3>';
+  if(!claims.length) html+='<p style="color:var(--mut)">Καμία καταχώρηση ακόμα.</p>';
+  else html+='<table><thead><tr><th>Ημ/νία</th><th>Τίτλος</th><th>Serial</th><th></th></tr></thead><tbody>'+claims.map((c,i)=>{
+    const d=new Date(c.claimed_at).toLocaleString('el-GR');
+    const btn=c.image_url?('<button class="small" type="button" data-show-idx="'+i+'">📱 Προβολή ξανά</button>'):'';
+    return '<tr><td>'+esc(d)+'</td><td>'+esc(c.wp_title)+'</td><td>'+esc(c.serial||'')+'</td><td>'+btn+'</td></tr>';
+  }).join('')+'</tbody></table>';
+  html+='</div>';
+  box.innerHTML=html;
+  box.querySelectorAll('[data-show]').forEach(btn=>{
+    btn.onclick=()=>{ const id=btn.dataset.show; const q=avail.find(x=>String(x.wp_qr_id)===id); if(q&&q.image_url) showQrFullscreen(q.image_url,q.title); else alert('Δεν βρέθηκε εικόνα QR'); };
+  });
+  box.querySelectorAll('[data-show-idx]').forEach(btn=>{
+    btn.onclick=()=>{ const c=claims[+btn.dataset.showIdx]; if(c?.image_url) showQrFullscreen(c.image_url,c.wp_title||c.serial||''); };
+  });
+  box.querySelectorAll('[data-claim]').forEach(btn=>{
+    btn.onclick=async()=>{
+      const id=btn.dataset.claim; const q=avail.find(x=>String(x.wp_qr_id)===id);
+      if(!confirm('Καταχώρηση QR «'+(q?.title||q?.serial||id)+'»;')) return;
+      btn.disabled=true; btn.textContent='...';
+      try{
+        const emp=$('employee')?.value||'';
+        const res=await qrInvoke('claim',{wp_qr_id:+id,employee_name:emp});
+        const c=res.claim||{};
+        if(c.image_url) showQrFullscreen(c.image_url,c.wp_title||c.serial||'');
+        else if(q?.image_url) showQrFullscreen(q.image_url,q.title||'');
+        const boxId=box.id||'qrWhBox';
+        await loadQrWarehouse(boxId);
+      }catch(e){ alert(String(e.message||e)); btn.disabled=false; btn.textContent='✓ Πήρα αυτό'; }
+    };
+  });
+}
+window.loadQrWarehouse=async function(boxId){
+  const box=$(boxId||'qrWhBox'); if(!box) return;
   box.innerHTML='<div class="spin">Φόρτωση από connectphone.eu...</div>';
   try{
     const data=await qrInvoke('list');
     const hist=await qrInvoke('history');
-    const avail=data.available||[];
-  let html='<div class="card"><h3>📱 Διαθέσιμα Unlimited eSIM (15€)</h3><p style="font-size:13px;color:var(--mut);margin-top:-6px">Μόνο φορτωμένα unlimited eSIM από connectphone.eu · όχι SIM · όχι 10GB · '+avail.length+' διαθέσιμα · '+data.taken+' ήδη πήραν καταστήματα</p>';
-    if(!avail.length) html+='<p style="color:var(--mut)">Δεν υπάρχουν διαθέσιμα unlimited eSIM QR αυτή τη στιγμή.</p>';
-    else{
-      html+='<div class="qr-list">'+avail.map(q=>{
-        const img=q.image_url?('<img src="'+esc(q.image_url)+'" alt="" style="width:48px;height:48px;border-radius:8px;object-fit:cover;background:#fff">'):'';
-        return '<div class="qr-card">'+img+'<div class="meta"><div class="t">'+esc(q.title)+'</div><div class="s">'+(q.serial?('Serial: '+esc(q.serial)):'')+'</div></div><div class="acts"><button class="small" type="button" data-show="'+q.wp_qr_id+'">📱 Προβολή</button><button class="load1" type="button" data-claim="'+q.wp_qr_id+'">✓ Πήρα αυτό</button></div></div>';
-      }).join('')+'</div>';
-    }
-    html+='</div><div class="card"><h3>Ιστορικό '+esc(MY_STORE||'')+'</h3><div id="qrHistList">';
-    const claims=hist.claims||[];
-    if(!claims.length) html+='<p style="color:var(--mut)">Καμία καταχώρηση ακόμα.</p>';
-    else html+='<table><thead><tr><th>Ημ/νία</th><th>Τίτλος</th><th>Serial</th><th></th></tr></thead><tbody>'+claims.map(c=>{
-      const d=new Date(c.claimed_at).toLocaleString('el-GR');
-      const btn=c.image_url?('<button class="small" type="button" data-show-h="'+esc(c.image_url)+'" data-title="'+esc(c.wp_title)+'">📱</button>'):'';
-      return '<tr><td>'+esc(d)+'</td><td>'+esc(c.wp_title)+'</td><td>'+esc(c.serial||'')+'</td><td>'+btn+'</td></tr>';
-    }).join('')+'</tbody></table>';
-    html+='</div></div>';
-    box.innerHTML=html;
-    box.querySelectorAll('[data-show]').forEach(btn=>{
-      btn.onclick=()=>{ const id=btn.dataset.show; const q=avail.find(x=>String(x.wp_qr_id)===id); if(q&&q.image_url) showQrFullscreen(q.image_url,q.title); else alert('Δεν βρέθηκε εικόνα QR'); };
-    });
-    box.querySelectorAll('[data-show-h]').forEach(btn=>{
-      btn.onclick=()=>showQrFullscreen(btn.dataset.showH,btn.dataset.title);
-    });
-    box.querySelectorAll('[data-claim]').forEach(btn=>{
-      btn.onclick=async()=>{
-        if(!confirm('Καταχώρηση ότι πήρες αυτό το QR;')) return;
-        btn.disabled=true;
-        try{
-          const emp=$('employee')?.value||'';
-          await qrInvoke('claim',{wp_qr_id:+btn.dataset.claim,employee_name:emp});
-          await loadQrWarehouse();
-        }catch(e){ alert(String(e.message||e)); btn.disabled=false; }
-      };
-    });
+    renderQrWarehouseList(box,data.available||[],hist.claims||[]);
   }catch(e){
-    box.innerHTML='<div class="msg err" style="display:block">'+esc(String(e.message||e))+'</div>';
+    box.innerHTML='<div class="msg err" style="display:block">'+esc(String(e.message||e))+'</div><button class="small" type="button" onclick="loadQrWarehouse(\''+(boxId||'qrWhBox')+'\')">Δοκίμασε ξανά</button>';
   }
 };
 window.loadQrAdmin=async function(){
@@ -852,6 +864,7 @@ function renderWarehouse(){
   if(isOnline()){ renderBrandWarehouse(ONLINE_BRANDS,'onEmpty','onLoad'); return; }
   renderBrandWarehouse(STORE_BRANDS,'emptyBody','loadedBody');
   loadEsimCatalog();
+  if(PHYSICAL_STORES.indexOf(MY_STORE)>=0&&window.loadQrWarehouse) loadQrWarehouse('qrWhBox');
 }
 function renderOnlineWh(){
   renderBrandWarehouse(ONLINE_BRANDS,'onEmpty','onLoad');
