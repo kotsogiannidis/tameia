@@ -1,16 +1,21 @@
-# ConnectPhone Ταμείο — static SPA on Netlify (no build step)
+# ConnectPhone Ταμείο — αποσυρμένο.
+# Ο,τι μένει εδώ είναι μια σελίδα που λέει στο προσωπικό πού μετακόμισε το ταμείο.
+
 [build]
   publish = "."
 
-# POS app: always serve fresh HTML so store staff get updates immediately
+# Η σελίδα τερματισμού και ο διακόπτης ΔΕΝ αποθηκεύονται ποτέ: κάθε συσκευή που
+# ανοίγει το παλιό site πρέπει να τα πάρει φρέσκα, αλλιώς συνεχίζει να βλέπει το
+# αντίγραφο της παλιάς εφαρμογής που έχει ήδη στη μνήμη της.
 [[headers]]
   for = "/index.html"
   [headers.values]
     Cache-Control = "no-cache, no-store, must-revalidate"
-    X-Frame-Options = "DENY"
-    X-Content-Type-Options = "nosniff"
-    Referrer-Policy = "strict-origin-when-cross-origin"
-    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
 
 [[headers]]
   for = "/*"
@@ -19,7 +24,7 @@
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
 
-# Single-page app: deep links fall back to index.html
+# Κάθε παλιός σύνδεσμος — αποθήκη, πωλήσεις, QR — καταλήγει στην ανακοίνωση.
 [[redirects]]
   from = "/*"
   to = "/index.html"

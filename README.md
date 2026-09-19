@@ -1,51 +1,40 @@
-﻿# ConnectPhone Tameia (Ταμεία)
+# ConnectPhone Ταμείο — αποσυρμένο
 
-**EN:** Store-facing POS / cash-register web app for ConnectPhone retail locations. Static single-page app (no build step) with Supabase Auth, real-time data, and Edge Functions for WooCommerce sync, alerts, admin settings, warehouse QR flows, and package photo scanning.
+Αυτή η εφαρμογή **δεν χρησιμοποιείται πλέον**. Αντικαταστάθηκε από το module
+**Ταμείο** μέσα στο `connectphone-finance` (Laravel), στο
+<https://finance.allangles.news>.
 
-**EL:** Εφαρμογή ταμείου για καταστήματα ConnectPhone. SPA χωρίς build, με Supabase για σύνδεση χρηστών, δεδομένα και Edge Functions.
+Το repo μένει εδώ μόνο ως ιστορικό. Ο κώδικας της εφαρμογής υπάρχει στα
+προηγούμενα commits.
 
-## Structure
+## Τι ήταν
 
-```
-tameia/
-  index.html              # Main POS UI
-  manifest.webmanifest    # PWA manifest
-  sw.js                   # Service worker
-  netlify.toml            # Netlify headers & SPA redirects
-  supabase/
-    migrations/             # SQL migrations (Woo, alerts, QR claims)
-    functions/
-      woo-sync/             # WooCommerce synchronization
-      check-alerts/         # Alert checks / notifications
-      admin-settings/       # Admin configuration API
-      qr-warehouse/         # Warehouse QR claim flows
-      scan-package-photo/   # Package photo scan handling
-```
+Εφαρμογή ταμείου για τα καταστήματα ConnectPhone: ένα `index.html` χωρίς build,
+με Supabase για σύνδεση χρηστών, δεδομένα και Edge Functions (συγχρονισμός
+WooCommerce, ειδοποιήσεις, ρυθμίσεις, QR αποθήκης, σάρωση πακέτων). Έτρεχε σε
+Netlify με backend το Supabase project `stbmppnyngfkbvgoajuf` («ΤΑΜΕΙΑ»).
 
-## Deploy
+Τελευταία ανάπτυξη: Ιούνιος 2026. Απόσυρση: Σεπτέμβριος 2026.
 
-### Netlify (frontend)
+## Τι έμεινε
 
-1. Connect this repo to [Netlify](https://www.netlify.com/) (or drag-and-drop the folder).
-2. Build settings: **publish directory** = `.` (root); no build command.
-3. `netlify.toml` sets security headers and SPA fallback to `index.html`.
+| Αρχείο | Ρόλος |
+|---|---|
+| `index.html` | Σελίδα που λέει πού μετακόμισε το ταμείο, και σβήνει το παλιό PWA από τη συσκευή |
+| `sw.js` | Service worker που ξεγράφει τον εαυτό του και αδειάζει τις μνήμες |
+| `netlify.toml` | Σερβίρει την ανακοίνωση σε κάθε παλιό σύνδεσμο, χωρίς cache |
 
-### Supabase (backend)
+Η παλιά εφαρμογή ήταν PWA. Οι συσκευές που την είχαν εγκατεστημένη κρατούσαν
+αντίγραφο και θα συνέχιζαν να το ανοίγουν ακόμη και μετά το κατέβασμα του site —
+γι' αυτό τα δύο πρώτα αρχεία καθαρίζουν τη συσκευή αντί να τη γυρίσουν σε λευκή
+οθόνη.
 
-1. Install [Supabase CLI](https://supabase.com/docs/guides/cli) and link the project: `supabase link --project-ref <your-ref>`.
-2. Apply migrations: `supabase db push` (or run SQL from `supabase/migrations/` in order).
-3. Deploy Edge Functions:
-   ```bash
-   supabase functions deploy woo-sync
-   supabase functions deploy check-alerts
-   supabase functions deploy admin-settings
-   supabase functions deploy qr-warehouse
-   supabase functions deploy scan-package-photo
-   ```
-4. Set required secrets (WooCommerce, etc.) in the Supabase dashboard or via `supabase secrets set`.
+## Τι έχει απομείνει εκτός repo
 
-Configure the Supabase URL and anon key in the frontend (environment or embedded config as used in `index.html`).
+Η απόσυρση δεν ολοκληρώνεται από τον κώδικα. Εκκρεμούν, με τη σειρά:
 
-## Local notes
-
-- Do not commit `.env` or Netlify local state (see `.gitignore`).
+1. **Ανάκληση κλειδιών** — OpenAI, WooCommerce (connectphone.eu), Resend.
+   Ζούσαν στον πίνακα `app_settings` και στα secrets των Edge Functions.
+2. **Netlify** — αποσύνδεση του repo, και το domain να δείχνει εδώ ή στο νέο σύστημα.
+3. **Supabase** — pause του project `stbmppnyngfkbvgoajuf`, και διαγραφή αργότερα.
+4. **GitHub** — archive αυτού του repo.

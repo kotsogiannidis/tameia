@@ -1,43 +1,30 @@
-const CACHE = 'tameia-v1';
-const SHELL = ['./index.html', './manifest.webmanifest'];
+/*
+ * Service worker τερματισμού.
+ *
+ * Αντικαθιστά τον service worker της παλιάς εφαρμογής ταμείου. Δεν αποθηκεύει
+ * τίποτα και δεν εξυπηρετεί τίποτα: μόλις ενεργοποιηθεί, αδειάζει κάθε
+ * αποθηκευμένη μνήμη, ξεγράφει τον εαυτό του και ξαναφορτώνει τις ανοιχτές
+ * καρτέλες ώστε να δουν τη σελίδα τερματισμού αντί για το παλιό αντίγραφο.
+ *
+ * Υπάρχει ως δεύτερη γραμμή άμυνας: ο browser κατεβάζει μόνος του νέο sw.js
+ * όταν ανοίξει η εφαρμογή, οπότε συσκευές που δεν προλάβουν να τρέξουν τον
+ * διακόπτη του index.html καθαρίζονται από εδώ.
+ */
 
-self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
+self.addEventListener('install', () => {
+  self.skipWaiting();
 });
 
-self.addEventListener('activate', (e) => {
-  e.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
-    ).then(() => self.clients.claim())
-  );
-});
+self.addEventListener('activate', (event) => {
+  event.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys.map((key) => caches.delete(key)));
 
-self.addEventListener('fetch', (e) => {
-  const url = new URL(e.request.url);
-  if (e.request.method !== 'GET') return;
-  if (url.hostname.includes('supabase.co')) return;
-  if (url.hostname.includes('jsdelivr.net')) {
-    e.respondWith(
-      caches.open(CACHE).then((cache) =>
-        fetch(e.request).then((res) => {
-          cache.put(e.request, res.clone());
-          return res;
-        }).catch(() => cache.match(e.request))
-      )
-    );
-    return;
-  }
-  if (url.pathname.endsWith('index.html') || url.pathname.endsWith('/')) {
-    e.respondWith(
-      fetch(e.request).then((res) => {
-        caches.open(CACHE).then((c) => c.put('./index.html', res.clone()));
-        return res;
-      }).catch(() => caches.match('./index.html'))
-    );
-  }
-});
+    await self.registration.unregister();
 
-self.addEventListener('message', (e) => {
-  if (e.data && e.data.type === 'SKIP_WAITING') self.skipWaiting();
+    const windows = await self.clients.matchAll({ type: 'window' });
+    for (const client of windows) {
+      client.navigate(client.url);
+    }
+  })());
 });
